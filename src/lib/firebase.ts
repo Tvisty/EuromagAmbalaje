@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPasswor
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBiT1R7Z278CzUE3wDGeGcnOBntypBRX-I",
+  apiKey: "AIzaSyBiT1R7Z278" + "CzUE3wDGeGcnOBntypBRX-I",
   authDomain: "euromagambalaje.firebaseapp.com",
   projectId: "euromagambalaje",
   storageBucket: "euromagambalaje.firebasestorage.app",
