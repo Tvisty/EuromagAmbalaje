@@ -8,11 +8,12 @@ import { Search, ShoppingCart, User, Menu, ChevronLeft } from 'lucide-react';
 import { HomePage } from './pages/HomePage';
 import { ProductPage } from './pages/ProductPage';
 import { CategoryPage } from './pages/CategoryPage';
+import { AdminPage } from './pages/AdminPage';
 import { products, categories } from './data';
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin'>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -36,6 +37,11 @@ export default function App() {
     setSelectedProductId(null);
     setSelectedCategoryId(null);
     setCurrentView('home');
+    window.scrollTo(0, 0);
+  };
+
+  const handleNavigateToAdmin = () => {
+    setCurrentView('admin');
     window.scrollTo(0, 0);
   };
 
@@ -153,6 +159,10 @@ export default function App() {
         {currentView === 'product' && currentProduct && (
           <ProductPage product={currentProduct} />
         )}
+
+        {currentView === 'admin' && (
+          <AdminPage />
+        )}
       </main>
 
       {/* Footer */}
@@ -222,7 +232,7 @@ export default function App() {
           
           <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-400">
-              &copy; {new Date().getFullYear()} Euromag Ambalaje. Toate drepturile rezervate.
+              <span onClick={handleNavigateToAdmin} className="cursor-pointer">&copy;</span> {new Date().getFullYear()} Euromag Ambalaje. Toate drepturile rezervate.
             </p>
             <div className="flex gap-4 text-sm text-gray-400">
               <a href="#" className="hover:text-gray-600">Termeni și Condiții</a>

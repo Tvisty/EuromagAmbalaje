@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, Package, Truck, ShieldCheck, Scissors } from 'lucide-react';
 import { categories } from '../data';
+import { QuoteModal } from '../components/QuoteModal';
 
 interface HomePageProps {
   onNavigateToCategory: (categoryId: string) => void;
 }
 
 export function HomePage({ onNavigateToCategory }: HomePageProps) {
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+
   return (
     <>
+      <QuoteModal isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} />
+      
       {/* Hero Section */}
       <section className="relative bg-bg-light overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/5 to-transparent"></div>
@@ -34,7 +39,10 @@ export function HomePage({ onNavigateToCategory }: HomePageProps) {
                 Vezi Catalogul
                 <ChevronRight className="w-5 h-5" />
               </button>
-              <button className="bg-white hover:bg-gray-50 text-brand-slate border border-gray-200 font-medium py-3.5 px-8 rounded-lg transition-all shadow-sm flex items-center justify-center gap-2">
+              <button 
+                onClick={() => setIsQuoteModalOpen(true)}
+                className="bg-white hover:bg-gray-50 text-brand-slate border border-gray-200 font-medium py-3.5 px-8 rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
+              >
                 Cere Ofertă Personalizată
               </button>
             </div>
@@ -174,7 +182,10 @@ export function HomePage({ onNavigateToCategory }: HomePageProps) {
                 </li>
               </ul>
               
-              <button className="bg-brand-light hover:bg-brand-light/90 text-white font-bold py-3.5 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl">
+              <button 
+                onClick={() => setIsQuoteModalOpen(true)}
+                className="bg-brand-light hover:bg-brand-light/90 text-white font-bold py-3.5 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl"
+              >
                 Cere Ofertă B2B
               </button>
             </div>

@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { 
+      allow read, write: if false; 
+    }
+
+    // Global Helpers
+    function isValidId(id) { 
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isAdmin() { 
+      return isSignedIn() && (
+        ('email' in request.auth.token && request.auth.token.email in ["gleczfalvi@gmail.com", "euromagambalaje@gmail.com"]) || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      ); 
+    }
+
+    // Order Validations
+    function isValidOrder(data) {
+      return data.keys().hasAll(['status', 'customerName', 'customerEmail', 'customerPhone', 'createdAt'])
+        && data.status is string && data.status in ["noua", "in_lucru", "finalizata", "anulata"]
+        && data.customerName is string && data.customerName.size() <= 100
+        && data.customerEmail is string && data.customerEmail.size() <= 100
+        && data.customerPhone is string && data.customerPhone.size() <= 30
+        && data.createdAt == request.time;
+    }
+
+    match /orders/{orderId} {
+      allow create: if isValidId(orderId) && isValidOrder(incoming());
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin() && isValidOrder(incoming()) && incoming().createdAt == existing().createdAt;
+    }
+
+    // Quote Validations
+    function isValidQuote(data) {
+      return data.keys().hasAll(['status', 'companyName', 'email', 'phone', 'createdAt'])
+        && data.status is string && data.status in ["noua", "contactat", "oferta_trimisa", "inchisa"]
+        && data.companyName is string && data.companyName.size() <= 100
+        && data.email is string && data.email.size() <= 100
+        && data.phone is string && data.phone.size() <= 30
+        && data.createdAt == request.time;
+    }
+
+    match /quotes/{quoteId} {
+      allow create: if isValidId(quoteId) && isValidQuote(incoming());
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin() && isValidQuote(incoming()) && incoming().createdAt == existing().createdAt;
+    }
+
+    // Setting Validations
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /product_prices/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admins/{adminUid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Customer order",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["noua", "in_lucru", "finalizata", "anulata"] },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "productTitle": { "type": "string" },
+        "quantity": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "createdAt": { "type": "number", "description": "Timestamp" },
+        "updatedAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["status", "customerName", "customerEmail", "customerPhone", "createdAt"]
+    },
+    "Quote": {
+      "title": "Quote",
+      "description": "B2B quote request",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["noua", "contactat", "oferta_trimisa", "inchisa"] },
+        "companyName": { "type": "string" },
+        "cui": { "type": "string" },
+        "contactName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp" },
+        "updatedAt": { "type": "number", "description": "Timestamp" }
+      },
+      "required": ["status", "companyName", "email", "phone", "createdAt"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "App settings like pricing and discounts",
+      "type": "object",
+      "properties": {
+        "value": { "type": "string" },
+        "type": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["value", "updatedAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "List of admin uids",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer orders collection"
+    },
+    "/quotes/{quoteId}": {
+      "schema": { "$ref": "#/entities/Quote" },
+      "description": "B2B quote requests"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Setting" },
+      "description": "Global application settings for admin"
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Registry of admin users"
+    }
+  }
+}

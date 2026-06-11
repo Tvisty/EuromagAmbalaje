@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ShoppingCart, Check, Package, ShieldCheck, Truck } from 'lucide-react';
 import { Product } from '../types';
+import { OrderModal } from '../components/OrderModal';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface ProductPageProps {
   product: Product;
@@ -15,10 +18,26 @@ export function ProductPage({ product }: ProductPageProps) {
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(initialOptions);
   const [quantity, setQuantity] = useState<number>(100);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [productPrices, setProductPrices] = useState<Record<string, number>>({});
   
   // Use product.images array if available, otherwise default to product.image
   const productImages = product.images && product.images.length > 0 ? product.images : [product.image];
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, 'product_prices', product.id));
+        if (docSnap.exists()) {
+          setProductPrices(docSnap.data().prices || {});
+        }
+      } catch (err) {
+        console.error("Error fetching product prices:", err);
+      }
+    };
+    fetchPrices();
+  }, [product.id]);
 
   const handleOptionChange = (optionId: string, value: string) => {
     setSelectedOptions(prev => ({
@@ -27,8 +46,28 @@ export function ProductPage({ product }: ProductPageProps) {
     }));
   };
 
+  const currentPricePerPiece = useMemo(() => {
+    const dimensiune = selectedOptions['dimensiune'];
+    if (dimensiune && productPrices[dimensiune] && productPrices[dimensiune] > 0) {
+      return productPrices[dimensiune];
+    }
+    return product.basePrice;
+  }, [product.basePrice, selectedOptions, productPrices]);
+
+  const totalPrice = useMemo(() => {
+    return currentPricePerPiece * quantity;
+  }, [currentPricePerPiece, quantity]);
+
   return (
     <div className="bg-bg-light min-h-screen py-12">
+      <OrderModal 
+        isOpen={isOrderModalOpen} 
+        onClose={() => setIsOrderModalOpen(false)} 
+        product={product}
+        quantity={quantity}
+        totalPrice={totalPrice}
+        selectedOptions={selectedOptions}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="flex flex-col md:flex-row">
@@ -76,7 +115,7 @@ export function ProductPage({ product }: ProductPageProps) {
                 <div>
                   <p className="text-sm text-gray-500 font-medium mb-1">Preț estimativ per bucată</p>
                   <div className="flex items-end gap-2">
-                    <span className="text-3xl font-bold text-brand-dark">{product.basePrice.toFixed(2)} RON</span>
+                    <span className="text-3xl font-bold text-brand-dark">{currentPricePerPiece.toFixed(2)} RON</span>
                     <span className="text-gray-400 mb-1">+TVA</span>
                   </div>
                 </div>
@@ -143,9 +182,12 @@ export function ProductPage({ product }: ProductPageProps) {
                 </div>
               </div>
 
-              <button className="w-full bg-brand-dark hover:bg-brand-dark/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg">
+              <button 
+                onClick={() => setIsOrderModalOpen(true)}
+                className="w-full bg-brand-dark hover:bg-brand-dark/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+              >
                 <ShoppingCart className="w-6 h-6" />
-                Adaugă în coș cererea de ofertă
+                Trimite comanda rapidă
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-100">
