@@ -17,6 +17,9 @@ export function OrderModal({ isOpen, onClose, product, quantity, totalPrice, sel
     customerName: '',
     customerEmail: '',
     customerPhone: '',
+    deliveryAddress: '',
+    billingDetails: '',
+    orderNotes: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -41,7 +44,7 @@ export function OrderModal({ isOpen, onClose, product, quantity, totalPrice, sel
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
-        setFormData({ customerName: '', customerEmail: '', customerPhone: '' });
+        setFormData({ customerName: '', customerEmail: '', customerPhone: '', deliveryAddress: '', billingDetails: '', orderNotes: '' });
       }, 3000);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'orders');
@@ -93,6 +96,18 @@ export function OrderModal({ isOpen, onClose, product, quantity, totalPrice, sel
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Telefon *</label>
                   <input required type="tel" value={formData.customerPhone} onChange={e => setFormData({...formData, customerPhone: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-light focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Adresa de livrare *</label>
+                  <textarea required value={formData.deliveryAddress} onChange={e => setFormData({...formData, deliveryAddress: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-light focus:outline-none" rows={2} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date de facturare (opțional)</label>
+                  <textarea placeholder="CUI, Nr. Reg. Com, Adresa sediu (dacă este firmă)" value={formData.billingDetails} onChange={e => setFormData({...formData, billingDetails: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-light focus:outline-none" rows={2} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Observații comandă (opțional)</label>
+                  <textarea value={formData.orderNotes} onChange={e => setFormData({...formData, orderNotes: e.target.value})} className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-brand-light focus:outline-none" rows={2} />
                 </div>
                 
                 <button 

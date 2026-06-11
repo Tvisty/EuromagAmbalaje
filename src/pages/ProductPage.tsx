@@ -19,7 +19,7 @@ export function ProductPage({ product }: ProductPageProps) {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(initialOptions);
   const [quantity, setQuantity] = useState<number>(100);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
-  const [productPrices, setProductPrices] = useState<Record<string, number>>({});
+  const [productData, setProductData] = useState<{ prices: Record<string, number>, basePrice: number, discount: number }>({ prices: {}, basePrice: 0, discount: 0 });
   
   // Use product.images array if available, otherwise default to product.image
   const productImages = product.images && product.images.length > 0 ? product.images : [product.image];
@@ -30,7 +30,12 @@ export function ProductPage({ product }: ProductPageProps) {
       try {
         const docSnap = await getDoc(doc(db, 'product_prices', product.id));
         if (docSnap.exists()) {
-          setProductPrices(docSnap.data().prices || {});
+          const data = docSnap.data();
+          setProductData({
+             prices: data.prices || {},
+             basePrice: data.basePrice || 0,
+             discount: data.discount || 0
+          });
         }
       } catch (err) {
         console.error("Error fetching product prices:", err);
@@ -46,13 +51,24 @@ export function ProductPage({ product }: ProductPageProps) {
     }));
   };
 
-  const currentPricePerPiece = useMemo(() => {
+  const originalPricePerPiece = useMemo(() => {
     const dimensiune = selectedOptions['dimensiune'];
-    if (dimensiune && productPrices[dimensiune] && productPrices[dimensiune] > 0) {
-      return productPrices[dimensiune];
+    let price = product.basePrice;
+
+    if (dimensiune && productData.prices[dimensiune] && productData.prices[dimensiune] > 0) {
+      price = productData.prices[dimensiune];
+    } else if (productData.basePrice && productData.basePrice > 0) {
+      price = productData.basePrice;
     }
-    return product.basePrice;
-  }, [product.basePrice, selectedOptions, productPrices]);
+    return price;
+  }, [product.basePrice, selectedOptions, productData]);
+
+  const currentPricePerPiece = useMemo(() => {
+    if (productData.discount && productData.discount > 0) {
+      return originalPricePerPiece * (1 - productData.discount / 100);
+    }
+    return originalPricePerPiece;
+  }, [originalPricePerPiece, productData.discount]);
 
   const totalPrice = useMemo(() => {
     return currentPricePerPiece * quantity;
@@ -80,6 +96,11 @@ export function ProductPage({ product }: ProductPageProps) {
                   alt={`${product.title} - Imagine ${currentImageIndex + 1}`} 
                   className="w-full h-full object-cover absolute inset-0"
                 />
+                {productData.discount > 0 && (
+                  <div className="absolute top-4 left-4 bg-red-500 text-white font-bold px-3 py-1 rounded-full shadow-md text-sm">
+                    -{productData.discount}% REDUCERE
+                  </div>
+                )}
               </div>
               
               {/* Thumbnails */}
@@ -116,6 +137,9 @@ export function ProductPage({ product }: ProductPageProps) {
                   <p className="text-sm text-gray-500 font-medium mb-1">Preț estimativ per bucată</p>
                   <div className="flex items-end gap-2">
                     <span className="text-3xl font-bold text-brand-dark">{currentPricePerPiece.toFixed(2)} RON</span>
+                    {productData.discount > 0 && (
+                      <span className="text-lg text-gray-400 line-through mb-1 ml-1">{originalPricePerPiece.toFixed(2)} RON</span>
+                    )}
                     <span className="text-gray-400 mb-1">+TVA</span>
                   </div>
                 </div>

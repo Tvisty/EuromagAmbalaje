@@ -183,8 +183,23 @@ export function AdminPage() {
                     <span className="font-medium text-gray-900">Produs:</span> {order.productTitle} x {order.quantity} buc
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
-                    <span className="font-medium text-gray-900">Total estimat:</span> {order.totalPrice.toFixed(2)} RON
+                    <span className="font-medium text-gray-900">Total estimat:</span> {order.totalPrice?.toFixed(2)} RON
                   </div>
+                  {order.deliveryAddress && (
+                    <div className="text-sm text-gray-600 mt-1">
+                      <span className="font-medium text-gray-900">Adresa Livrare:</span> {order.deliveryAddress}
+                    </div>
+                  )}
+                  {order.billingDetails && (
+                    <div className="text-sm text-gray-600 mt-1">
+                      <span className="font-medium text-gray-900">Date Facturare:</span> {order.billingDetails}
+                    </div>
+                  )}
+                  {order.orderNotes && (
+                    <div className="text-sm text-gray-600 mt-1">
+                      <span className="font-medium text-gray-900">Observații:</span> {order.orderNotes}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col items-end justify-between min-w-[200px]">
                   <select 
@@ -288,9 +303,10 @@ function SettingsEditor() {
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
       if (docSnap.exists()) {
-        setSettings(docSnap.data());
+        const data = docSnap.data();
+        setSettings({ minOrder: data.minOrder?.toString() || '500' });
       } else {
-        setSettings({ tva: 19, minOrder: 500, basePaperPrice: 2.5 });
+        setSettings({ minOrder: '500' });
       }
       setLoading(false);
     }, (err) => {
@@ -301,10 +317,10 @@ function SettingsEditor() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setSettings(prev => ({
       ...prev,
-      [name]: type === 'number' ? Number(value) : value
+      [name]: value
     }));
   };
 
@@ -313,8 +329,11 @@ function SettingsEditor() {
     setSaving(true);
     setSuccessMsg('');
     try {
-      await updateDoc(doc(db, 'settings', 'global'), settings).catch(async (err) => {
-         await setDoc(doc(db, 'settings', 'global'), settings);
+      const parsedSettings = {
+        minOrder: settings.minOrder === '' ? 0 : Number(settings.minOrder)
+      };
+      await updateDoc(doc(db, 'settings', 'global'), parsedSettings).catch(async (err) => {
+         await setDoc(doc(db, 'settings', 'global'), parsedSettings);
       });
       setSuccessMsg('Setările au fost salvate cu succes!');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -331,32 +350,11 @@ function SettingsEditor() {
     <form onSubmit={handleSave} className="border border-gray-200 rounded-lg p-6 bg-white max-w-2xl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">TVA (%)</label>
-          <input 
-            type="number" 
-            name="tva"
-            value={settings.tva || 19} 
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded p-2 focus:ring-brand-light focus:outline-none focus:ring-2"
-          />
-        </div>
-        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Comandă minimă (RON)</label>
           <input 
             type="number" 
             name="minOrder"
             value={settings.minOrder || 0} 
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded p-2 focus:ring-brand-light focus:outline-none focus:ring-2"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Preț de bază Carton (RON / mp)</label>
-          <input 
-            type="number" 
-            step="0.01"
-            name="basePaperPrice"
-            value={settings.basePaperPrice || 0} 
             onChange={handleChange}
             className="w-full border border-gray-300 rounded p-2 focus:ring-brand-light focus:outline-none focus:ring-2"
           />
@@ -377,18 +375,22 @@ function SettingsEditor() {
 }
 
 function ProductPricesEditor() {
-  const [productPrices, setProductPrices] = useState<Record<string, Record<string, number>>>({});
+  const [productData, setProductData] = useState<Record<string, { prices: Record<string, number | string>, basePrice: number | string, discount: number | string }>>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'product_prices'), (snapshot) => {
-      const prices: Record<string, Record<string, number>> = {};
+      const data: Record<string, { prices: Record<string, number | string>, basePrice: number | string, discount: number | string }> = {};
       snapshot.forEach(doc => {
-        prices[doc.id] = doc.data().prices || {};
+        data[doc.id] = {
+          prices: doc.data().prices || {},
+          basePrice: doc.data().basePrice || 0,
+          discount: doc.data().discount || 0
+        };
       });
-      setProductPrices(prices);
+      setProductData(data);
       setLoading(false);
     }, (err) => {
       console.error("Error fetching product prices:", err);
@@ -398,11 +400,24 @@ function ProductPricesEditor() {
   }, []);
 
   const handlePriceChange = (productId: string, variantKey: string, value: string) => {
-    setProductPrices(prev => ({
+    setProductData(prev => ({
       ...prev,
       [productId]: {
-        ...(prev[productId] || {}),
-        [variantKey]: value === '' ? 0 : Number(value)
+        ...(prev[productId] || { prices: {}, basePrice: 0, discount: 0 }),
+        prices: {
+          ...(prev[productId]?.prices || {}),
+          [variantKey]: value
+        }
+      }
+    }));
+  };
+
+  const handleDataChange = (productId: string, field: 'basePrice' | 'discount', value: string) => {
+    setProductData(prev => ({
+      ...prev,
+      [productId]: {
+        ...(prev[productId] || { prices: {}, basePrice: 0, discount: 0 }),
+        [field]: value
       }
     }));
   };
@@ -411,9 +426,21 @@ function ProductPricesEditor() {
     setSavingId(productId);
     setSuccessMsg('');
     try {
-      const prices = productPrices[productId] || {};
-      await setDoc(doc(db, 'product_prices', productId), { prices }, { merge: true });
-      setSuccessMsg('Prețuri salvate cu succes pentru acest produs!');
+      const data = productData[productId] || { prices: {}, basePrice: 0, discount: 0 };
+      
+      const parsedPrices: Record<string, number> = {};
+      for (const [key, val] of Object.entries(data.prices)) {
+        parsedPrices[key] = val === '' ? 0 : Number(val);
+      }
+      
+      const formattedData = {
+        prices: parsedPrices,
+        basePrice: data.basePrice === '' ? 0 : Number(data.basePrice),
+        discount: data.discount === '' ? 0 : Number(data.discount)
+      };
+
+      await setDoc(doc(db, 'product_prices', productId), formattedData, { merge: true });
+      setSuccessMsg('Setări salvate cu succes pentru acest produs!');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
       console.error(err);
@@ -430,6 +457,7 @@ function ProductPricesEditor() {
       
       {products.map(product => {
         const dimensiuni = product.options.find(o => o.id === 'dimensiune')?.values || [];
+        const currentData = productData[product.id] || { prices: {}, basePrice: 0, discount: 0 };
         
         return (
           <div key={product.id} className="border border-gray-200 rounded-lg p-6 bg-white overflow-hidden shadow-sm">
@@ -438,40 +466,71 @@ function ProductPricesEditor() {
                 <img src={product.image} alt={product.title} className="w-12 h-12 rounded object-cover border" />
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{product.title}</h3>
-                  <p className="text-sm text-gray-500">Preț de bază (rezervă): <span className="font-medium text-brand-dark">{product.basePrice.toFixed(2)} RON</span></p>
+                  <p className="text-sm text-gray-500">Preț implicit setat în cod: <span className="font-medium text-brand-dark">{product.basePrice.toFixed(2)} RON</span></p>
                 </div>
               </div>
-              {dimensiuni.length > 0 && (
-                <button 
-                  onClick={() => handleSavePrices(product.id)}
-                  disabled={savingId === product.id}
-                  className="px-5 py-2 bg-brand-dark text-white rounded font-medium hover:bg-brand-dark/90 disabled:opacity-50 text-sm whitespace-nowrap shadow-sm"
-                >
-                  {savingId === product.id ? 'Se salvează...' : 'Salvează Prețuri'}
-                </button>
-              )}
+              <button 
+                onClick={() => handleSavePrices(product.id)}
+                disabled={savingId === product.id}
+                className="px-5 py-2 bg-brand-dark text-white rounded font-medium hover:bg-brand-dark/90 disabled:opacity-50 text-sm whitespace-nowrap shadow-sm"
+              >
+                {savingId === product.id ? 'Se salvează...' : 'Salvează Setări Produs'}
+              </button>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-              {dimensiuni.map(val => (
-                <div key={val} className="border border-gray-100 p-3 rounded-lg bg-gray-50 flex flex-col justify-between hover:border-gray-200 transition-colors">
-                  <span className="text-sm font-medium text-gray-700 mb-3 truncate block border-b border-gray-200 pb-2" title={val}>{val}</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder={product.basePrice.toString()}
-                      value={productPrices[product.id]?.[val] || ''}
-                      onChange={(e) => handlePriceChange(product.id, val, e.target.value)}
-                      className="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-brand-light focus:outline-none focus:ring-2 font-medium"
-                    />
-                    <span className="text-gray-500 text-sm font-medium">RON</span>
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-amber-50/50 rounded-lg border border-amber-100/50">
+              {dimensiuni.length === 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Preț Unic Bază (RON)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder={product.basePrice.toString()}
+                    value={currentData.basePrice || ''}
+                    onChange={(e) => handleDataChange(product.id, 'basePrice', e.target.value)}
+                    className="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-brand-light focus:outline-none focus:ring-2 font-medium"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Înlocuiește prețul implicit pentru produsele fără mărimi (ex: pungi).</p>
                 </div>
-              ))}
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Discount Extra Produs (%)</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="100"
+                  placeholder="0"
+                  value={currentData.discount || ''}
+                  onChange={(e) => handleDataChange(product.id, 'discount', e.target.value)}
+                  className="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-brand-light focus:outline-none focus:ring-2 font-medium"
+                />
+                <p className="text-xs text-gray-500 mt-1">Se aplică reducerii la toate variațiile acestui produs.</p>
+              </div>
             </div>
-            {dimensiuni.length === 0 && (
-              <p className="text-sm text-gray-400 italic py-2">Acest produs nu are dimensiuni variabile.</p>
+
+            {dimensiuni.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                {dimensiuni.map(val => (
+                  <div key={val} className="border border-gray-100 p-3 rounded-lg bg-gray-50 flex flex-col justify-between hover:border-gray-200 transition-colors">
+                    <span className="text-sm font-medium text-gray-700 mb-3 truncate block border-b border-gray-200 pb-2" title={val}>{val}</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder={product.basePrice.toString()}
+                        value={currentData.prices[val] || ''}
+                        onChange={(e) => handlePriceChange(product.id, val, e.target.value)}
+                        className="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-brand-light focus:outline-none focus:ring-2 font-medium"
+                      />
+                      <span className="text-gray-500 text-sm font-medium">RON</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic py-2">Nu sunt mărimi variabile de setat. Prețul setat din "Preț Unic Bază" se va aplica.</p>
             )}
           </div>
         );
