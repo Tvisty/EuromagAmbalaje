@@ -1,15 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ShoppingCart, Check, Package, ShieldCheck, Truck } from 'lucide-react';
-import { Product } from '../types';
-import { OrderModal } from '../components/OrderModal';
+import { Product, CartItem } from '../types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 interface ProductPageProps {
   product: Product;
+  onAddToCart: (item: Omit<CartItem, 'id'>) => void;
 }
 
-export function ProductPage({ product }: ProductPageProps) {
+export function ProductPage({ product, onAddToCart }: ProductPageProps) {
   // Initialize state with the first value of each option
   const initialOptions = product.options.reduce((acc, option) => {
     acc[option.id] = option.values[0];
@@ -18,7 +18,6 @@ export function ProductPage({ product }: ProductPageProps) {
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(initialOptions);
   const [quantity, setQuantity] = useState<number>(100);
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [productData, setProductData] = useState<{ prices: Record<string, number>, basePrice: number, discount: number }>({ prices: {}, basePrice: 0, discount: 0 });
   
   // Use product.images array if available, otherwise default to product.image
@@ -76,14 +75,6 @@ export function ProductPage({ product }: ProductPageProps) {
 
   return (
     <div className="bg-bg-light min-h-screen py-12">
-      <OrderModal 
-        isOpen={isOrderModalOpen} 
-        onClose={() => setIsOrderModalOpen(false)} 
-        product={product}
-        quantity={quantity}
-        totalPrice={totalPrice}
-        selectedOptions={selectedOptions}
-      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="flex flex-col md:flex-row">
@@ -207,11 +198,11 @@ export function ProductPage({ product }: ProductPageProps) {
               </div>
 
               <button 
-                onClick={() => setIsOrderModalOpen(true)}
+                onClick={() => onAddToCart({ product, quantity, totalPrice, selectedOptions })}
                 className="w-full bg-brand-dark hover:bg-brand-dark/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
               >
                 <ShoppingCart className="w-6 h-6" />
-                Trimite comanda rapidă
+                Adaugă în coș
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-100">

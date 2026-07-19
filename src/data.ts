@@ -42,14 +42,7 @@ export const products: Product[] = [
         id: 'dimensiune',
         name: 'Dimensiune (L x l x h)',
         values: [
-          '24 x 24 x 4 cm',
-          '26 x 26 x 4 cm',
-          '28 x 28 x 4 cm',
-          '30 x 30 x 4 cm',
-          '32 x 32 x 4 cm',
-          '33 x 33 x 4 cm',
-          '40 x 40 x 4 cm',
-          '45 x 45 x 4 cm'
+          '32 x 32 x 4 cm'
         ]
       }
     ]
@@ -74,14 +67,63 @@ export const products: Product[] = [
         id: 'dimensiune',
         name: 'Dimensiune (L x l x h)',
         values: [
-          '24 x 24 x 4 cm',
-          '26 x 26 x 4 cm',
-          '28 x 28 x 4 cm',
-          '30 x 30 x 4 cm',
+          '32 x 32 x 4 cm'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'pizza-box-blank-white',
+    categoryId: 'pizza',
+    title: 'Cutie Pizza Blank Albă',
+    description: 'Cutie de pizza simplă (blank) din carton microondul E rezistent, exterior alb. Fără personalizare predefinită, gata pentru livrare.',
+    image: '/pizza-blank-alba.webp',
+    images: ['/pizza-blank-alba.webp', '/pizza-blank-alba1.webp', '/pizza-blank-alba2.webp'],
+    basePrice: 0.85,
+    minimumOrder: '100 buc / bax',
+    features: [
+      'Carton Microondul E',
+      'Exterior alb (Blank)',
+      'Format autoformabil',
+      'Fără print'
+    ],
+    options: [
+      {
+        id: 'dimensiune',
+        name: 'Dimensiune (L x l x h)',
+        values: [
           '32 x 32 x 4 cm',
           '33 x 33 x 4 cm',
-          '40 x 40 x 4 cm',
-          '45 x 45 x 4 cm'
+          '38 x 38 x 4 cm',
+          '48 x 48 x 4 cm'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'pizza-box-blank-kraft',
+    categoryId: 'pizza',
+    title: 'Cutie Pizza Blank Natur',
+    description: 'Cutie de pizza simplă (blank) din carton kraft natur. Aspect eco-friendly, fără personalizare predefinită.',
+    image: '/pizza-blank-natur.webp',
+    images: ['/pizza-blank-natur.webp', '/pizza-blank-natur1.webp', '/pizza-blank-natur2.webp'],
+    basePrice: 0.80,
+    minimumOrder: '100 buc / bax',
+    features: [
+      'Carton Kraft Natur',
+      'Exterior natur (Blank)',
+      '100% Reciclabilă',
+      'Fără print'
+    ],
+    options: [
+      {
+        id: 'dimensiune',
+        name: 'Dimensiune (L x l x h)',
+        values: [
+          '32 x 32 x 4 cm',
+          '33 x 33 x 4 cm',
+          '38 x 38 x 4 cm',
+          '48 x 48 x 4 cm'
         ]
       }
     ]
@@ -170,22 +212,6 @@ export const products: Product[] = [
         ]
       }
     ]
-  },
-  {
-    id: 'saci-ldpe',
-    categoryId: 'pungi',
-    title: 'Saci LDPE 100x50 de 60 de microni',
-    description: 'Saci rezistenți din folie LDPE (polietilenă de joasă densitate), grosime 60 microni. Ideali pentru ambalare industrială, protecție și depozitare.',
-    image: '/saci-ldpe-1.webp',
-    images: ['/saci-ldpe-1.webp', '/saci-ldpe-2.webp'],
-    basePrice: 0.85,
-    minimumOrder: '100 buc / set',
-    features: [
-      'Grosime: 60 microni',
-      'Dimensiune: 100 x 50 cm',
-      'Material: LDPE Reciclabil'
-    ],
-    options: []
   },
   {
     id: 'sacose-maieu',

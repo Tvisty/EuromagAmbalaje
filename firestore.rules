@@ -21,11 +21,18 @@ service cloud.firestore {
 
     // Order Validations
     function isValidOrder(data) {
-      return data.keys().hasAll(['status', 'customerName', 'customerEmail', 'customerPhone', 'createdAt'])
+      return data.keys().hasAll(['status', 'customerName', 'customerEmail', 'customerPhone', 'deliveryAddress', 'items', 'totalPrice', 'createdAt'])
         && data.status is string && data.status in ["noua", "in_lucru", "finalizata", "anulata"]
         && data.customerName is string && data.customerName.size() <= 100
         && data.customerEmail is string && data.customerEmail.size() <= 100
         && data.customerPhone is string && data.customerPhone.size() <= 30
+        && data.deliveryAddress is string && data.deliveryAddress.size() <= 500
+        && data.items is list
+        && data.totalPrice is number
+        && (data.keys().hasAll(['billingDetails']) == false || data.billingDetails is string)
+        && (data.keys().hasAll(['orderNotes']) == false || data.orderNotes is string)
+        && (data.keys().hasAll(['paymentMethod']) == false || data.paymentMethod is string)
+        && (data.keys().hasAll(['deliveryMethod']) == false || data.deliveryMethod is string)
         && data.createdAt == request.time;
     }
 
@@ -42,6 +49,9 @@ service cloud.firestore {
         && data.companyName is string && data.companyName.size() <= 100
         && data.email is string && data.email.size() <= 100
         && data.phone is string && data.phone.size() <= 30
+        && (data.keys().hasAll(['cui']) == false || data.cui is string)
+        && (data.keys().hasAll(['contactName']) == false || data.contactName is string)
+        && (data.keys().hasAll(['message']) == false || data.message is string)
         && data.createdAt == request.time;
     }
 

@@ -23,3 +23,12 @@ export interface Category {
   description: string;
   image: string;
 }
+
+export interface CartItem {
+  id: string; // unique id for the cart item (e.g., date.now())
+  product: Product;
+  quantity: number;
+  selectedOptions: Record<string, string>;
+  totalPrice: number;
+}
+

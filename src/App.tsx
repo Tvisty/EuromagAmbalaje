@@ -3,19 +3,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, User, Menu, ChevronLeft } from 'lucide-react';
 import { HomePage } from './pages/HomePage';
 import { ProductPage } from './pages/ProductPage';
 import { CategoryPage } from './pages/CategoryPage';
 import { AdminPage } from './pages/AdminPage';
 import { products, categories } from './data';
+import { db } from './lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { CartDrawer } from './components/CartDrawer';
+import { CheckoutModal } from './components/CheckoutModal';
+import { CartItem } from './types';
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin'>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [minOrder, setMinOrder] = useState<number>(500);
+  
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().minOrder !== undefined) {
+        setMinOrder(docSnap.data().minOrder);
+      }
+    }, (err) => {
+      console.error(err);
+    });
+    return () => unsub();
+  }, []);
 
   const handleNavigateToCategory = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
@@ -49,11 +70,29 @@ export default function App() {
   const currentCategory = categories.find(c => c.id === selectedCategoryId);
   const categoryProducts = products.filter(p => p.categoryId === selectedCategoryId);
 
+  const handleAddToCart = (item: Omit<CartItem, 'id'>) => {
+    setCartItems([...cartItems, { ...item, id: Date.now().toString() }]);
+    setIsCartOpen(true);
+  };
+  
+  const handleRemoveFromCart = (id: string) => {
+    setCartItems(cartItems.filter(item => item.id !== id));
+  };
+
+  const handleCheckout = () => {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleClearCart = () => {
+    setCartItems([]);
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-white">
       {/* Top Banner */}
       <div className="bg-brand-dark text-white text-xs py-2 text-center font-medium tracking-wide">
-        LIVRARE GRATUITĂ PENTRU COMENZI PESTE 500 RON
+        LIVRARE GRATUITĂ PENTRU COMENZI PESTE {minOrder} RON
       </div>
 
       {/* Header */}
@@ -95,12 +134,17 @@ export default function App() {
                 <User className="w-6 h-6 mb-1" />
                 <span className="text-xs font-medium">Contul meu</span>
               </button>
-              <button className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors relative">
+              <button 
+                className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors relative"
+                onClick={() => setIsCartOpen(true)}
+              >
                 <div className="relative">
                   <ShoppingCart className="w-6 h-6 mb-1" />
-                  <span className="absolute -top-1 -right-2 bg-brand-light text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                    0
-                  </span>
+                  {cartItems.length > 0 && (
+                    <span className="absolute -top-1 -right-2 bg-brand-light text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {cartItems.length}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs font-medium">Coșul tău</span>
               </button>
@@ -157,13 +201,28 @@ export default function App() {
         )}
 
         {currentView === 'product' && currentProduct && (
-          <ProductPage product={currentProduct} />
+          <ProductPage product={currentProduct} onAddToCart={handleAddToCart} />
         )}
 
         {currentView === 'admin' && (
           <AdminPage />
         )}
       </main>
+
+      <CartDrawer 
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        onRemoveItem={handleRemoveFromCart}
+        onCheckout={handleCheckout}
+      />
+
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cartItems={cartItems}
+        onClearCart={handleClearCart}
+      />
 
       {/* Footer */}
       <footer className="bg-gray-50 border-t border-gray-200 pt-16 pb-8">

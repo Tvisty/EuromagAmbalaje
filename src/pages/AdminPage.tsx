@@ -66,7 +66,6 @@ export function AdminPage() {
   const updateOrderStatus = async (id: string, newStatus: string, currentOrder: any) => {
     try {
       await updateDoc(doc(db, 'orders', id), {
-        ...currentOrder,
         status: newStatus
       });
     } catch (error) {
@@ -77,7 +76,6 @@ export function AdminPage() {
   const updateQuoteStatus = async (id: string, newStatus: string, currentQuote: any) => {
     try {
       await updateDoc(doc(db, 'quotes', id), {
-        ...currentQuote,
         status: newStatus
       });
     } catch (error) {
@@ -118,13 +116,15 @@ export function AdminPage() {
           {loginError && (
             <div className="text-sm text-red-600 bg-red-50 p-2 rounded">{loginError}</div>
           )}
-          <button 
-            type="submit"
-            disabled={isLoggingIn}
-            className="w-full bg-brand-dark text-white font-bold px-6 py-3 rounded-lg hover:bg-brand-dark/90 transition-colors disabled:opacity-70 mt-2"
-          >
-            {isLoggingIn ? 'Se autentifică...' : 'Autentificare'}
-          </button>
+          <div className="flex flex-col gap-2 mt-4">
+            <button 
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full bg-brand-dark text-white font-bold px-6 py-3 rounded-lg hover:bg-brand-dark/90 transition-colors disabled:opacity-70"
+            >
+              {isLoggingIn ? 'Se autentifică...' : 'Autentificare'}
+            </button>
+          </div>
         </form>
       </div>
     );
@@ -179,14 +179,40 @@ export function AdminPage() {
                   <div className="text-sm text-gray-600 mb-1">
                     <span className="font-medium text-gray-900">Contact:</span> {order.customerEmail} | {order.customerPhone}
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">Produs:</span> {order.productTitle} x {order.quantity} buc
+                  <div className="text-sm text-gray-600 mt-2 mb-2 bg-gray-50 p-2 rounded">
+                    <span className="font-medium text-gray-900 block mb-1">Produse ({order.items?.length || 0}):</span>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {order.items?.map((item: any, idx: number) => (
+                        <li key={idx}>
+                          <span className="font-medium">{item.productTitle}</span> x {item.quantity} buc 
+                          <span className="text-gray-500 text-xs ml-1">
+                            ({Object.entries(item.selectedOptions || {}).map(([k,v]) => v).join(' | ')})
+                          </span>
+                        </li>
+                      ))}
+                      {/* Fallback for older orders without items array */}
+                      {!order.items && order.productTitle && (
+                        <li>
+                          <span className="font-medium">{order.productTitle}</span> x {order.quantity} buc
+                        </li>
+                      )}
+                    </ul>
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     <span className="font-medium text-gray-900">Total estimat:</span> {order.totalPrice?.toFixed(2)} RON
                   </div>
-                  {order.deliveryAddress && (
-                    <div className="text-sm text-gray-600 mt-1">
+                  <div className="text-sm text-gray-600 mt-1 grid grid-cols-2 gap-2 mt-2">
+                    <div>
+                      <span className="font-medium text-gray-900 block">Metodă livrare:</span> 
+                      <span className="capitalize">{order.deliveryMethod === 'ridicare' ? 'Ridicare personală' : 'Prin curier rapid'}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900 block">Metodă plată:</span> 
+                      <span className="capitalize">{order.paymentMethod === 'card' ? 'Card bancar (Stripe)' : 'Ramburs / Numerar'}</span>
+                    </div>
+                  </div>
+                  {order.deliveryAddress && order.deliveryMethod !== 'ridicare' && (
+                    <div className="text-sm text-gray-600 mt-2">
                       <span className="font-medium text-gray-900">Adresa Livrare:</span> {order.deliveryAddress}
                     </div>
                   )}
