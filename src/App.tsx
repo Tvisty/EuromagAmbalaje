@@ -16,9 +16,11 @@ import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { CartItem } from './types';
 
+import { AccountPage } from './pages/AccountPage';
+
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin' | 'account'>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [minOrder, setMinOrder] = useState<number>(500);
@@ -130,9 +132,12 @@ export default function App() {
 
             {/* Actions */}
             <div className="flex items-center gap-6">
-              <button className="hidden sm:flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors">
+              <button 
+                className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors"
+                onClick={() => setCurrentView('account')}
+              >
                 <User className="w-6 h-6 mb-1" />
-                <span className="text-xs font-medium">Contul meu</span>
+                <span className="text-xs font-medium hidden sm:inline">Contul meu</span>
               </button>
               <button 
                 className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors relative"
@@ -146,7 +151,7 @@ export default function App() {
                     </span>
                   )}
                 </div>
-                <span className="text-xs font-medium">Coșul tău</span>
+                <span className="text-xs font-medium hidden sm:inline">Coșul tău</span>
               </button>
               <button className="md:hidden text-gray-500">
                 <Menu className="w-6 h-6" />
@@ -206,6 +211,10 @@ export default function App() {
 
         {currentView === 'admin' && (
           <AdminPage />
+        )}
+
+        {currentView === 'account' && (
+          <AccountPage onBack={() => setCurrentView('home')} />
         )}
       </main>
 

@@ -28,8 +28,11 @@ export function AdminPage() {
     }
   };
 
+  const ADMIN_EMAILS = ["gleczfalvi@gmail.com", "euromagambalaje@gmail.com"];
+  const isAdmin = user && user.email && ADMIN_EMAILS.includes(user.email);
+
   useEffect(() => {
-    if (!user) return;
+    if (!isAdmin) return;
 
     const ordersRef = collection(db, 'orders');
     const qOrders = query(ordersRef, orderBy('createdAt', 'desc'));
@@ -61,7 +64,7 @@ export function AdminPage() {
       unsubscribeOrders();
       unsubscribeQuotes();
     };
-  }, [user]);
+  }, [isAdmin]);
 
   const updateOrderStatus = async (id: string, newStatus: string, currentOrder: any) => {
     try {
@@ -126,6 +129,21 @@ export function AdminPage() {
             </button>
           </div>
         </form>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="p-8 max-w-md mx-auto text-center border mt-8 rounded-lg bg-white shadow-sm">
+        <h2 className="text-xl font-bold mb-4 text-red-600">Acces interzis</h2>
+        <p className="mb-6 text-gray-600">Nu aveți permisiuni de administrator pentru acest cont ({user.email}).</p>
+        <button 
+          onClick={logout}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-6 py-2 rounded-lg transition-colors"
+        >
+          Deconectare
+        </button>
       </div>
     );
   }
