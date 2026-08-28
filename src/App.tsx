@@ -17,10 +17,12 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { CartItem } from './types';
 
 import { AccountPage } from './pages/AccountPage';
+import { InfoPage } from './pages/InfoPage';
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin' | 'account'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin' | 'account' | 'info'>('home');
+  const [infoSection, setInfoSection] = useState<'shipping' | 'returns'>('shipping');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [minOrder, setMinOrder] = useState<number>(500);
@@ -259,6 +261,9 @@ export default function App() {
         {currentView === 'account' && (
           <AccountPage onBack={() => setCurrentView('home')} />
         )}
+        {currentView === 'info' && (
+          <InfoPage section={infoSection} />
+        )}
       </main>
 
       <CartDrawer 
@@ -324,11 +329,8 @@ export default function App() {
             <div>
               <h4 className="font-bold text-gray-900 mb-4">Informații Utile</h4>
               <ul className="space-y-2 text-sm text-gray-500">
-                <li><a href="#" className="hover:text-brand-dark transition-colors">Despre Noi</a></li>
-                <li><a href="#" className="hover:text-brand-dark transition-colors">Cum Comand?</a></li>
-                <li><a href="#" className="hover:text-brand-dark transition-colors">Livrare și Plată</a></li>
-                <li><a href="#" className="hover:text-brand-dark transition-colors">Politica de Retur</a></li>
-                <li><a href="#" className="hover:text-brand-dark transition-colors">Contact</a></li>
+                <li><button onClick={() => { setInfoSection('shipping'); setCurrentView('info'); }} className="hover:text-brand-dark transition-colors">Livrare și Plată</button></li>
+                <li><button onClick={() => { setInfoSection('returns'); setCurrentView('info'); }} className="hover:text-brand-dark transition-colors">Politica de Retur</button></li>
               </ul>
             </div>
             
