@@ -1,6 +1,7 @@
 import React from 'react';
-import { ChevronLeft, ShoppingCart } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { Product, Category } from '../types';
+import { ProductCard } from '../components/ProductCard';
 
 interface CategoryPageProps {
   category: Category;
@@ -33,51 +34,11 @@ export function CategoryPage({ category, products, onNavigateToProduct, onNaviga
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map(product => (
-             <div key={product.id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group">
-              <div 
-                className="relative w-full overflow-hidden bg-gray-50 cursor-pointer aspect-square"
-                onClick={() => onNavigateToProduct(product.id)}
-              >
-                <img 
-                  src={product.image} 
-                  alt={product.title} 
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <div className="p-5 flex flex-col flex-grow">
-                <h4 
-                  className="font-bold text-gray-900 text-lg mb-2 line-clamp-2 cursor-pointer hover:text-brand-dark transition-colors"
-                  onClick={() => onNavigateToProduct(product.id)}
-                >
-                  {product.title}
-                </h4>
-                <div className="text-sm text-gray-500 mb-4 flex-grow space-y-1">
-                  {product.features?.slice(0, 3).map((feature, idx) => (
-                     <p key={idx} className="line-clamp-1 flex items-center">
-                       <span className="w-1.5 h-1.5 rounded-full bg-brand-light/50 mr-2 flex-shrink-0"></span>
-                       {feature}
-                     </p>
-                  ))}
-                </div>
-                <div className="mt-auto flex justify-between items-end mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                   <div>
-                      <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider mb-0.5">Preț minim per bucată</span>
-                      <div className="flex items-end gap-1">
-                         <div className="text-xl font-bold text-brand-dark">{product.basePrice.toFixed(2)}</div>
-                         <div className="text-xs font-medium text-gray-500 mb-[3px]">RON +TVA</div>
-                      </div>
-                   </div>
-                </div>
-                <button 
-                  onClick={() => onNavigateToProduct(product.id)}
-                  className="w-full bg-white border border-gray-200 text-brand-dark hover:border-brand-dark hover:bg-brand-dark hover:text-white font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 text-sm shadow-sm"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  {product.options && product.options.length > 0 ? 'Vezi Dimensiuni' : 'Vezi Detalii'}
-                </button>
-              </div>
-            </div>
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              onNavigateToProduct={onNavigateToProduct} 
+            />
           ))}
         </div>
       </div>
