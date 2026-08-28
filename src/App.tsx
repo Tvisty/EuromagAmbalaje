@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, User, Menu, ChevronLeft } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, ChevronLeft, X } from 'lucide-react';
 import { HomePage } from './pages/HomePage';
 import { ProductPage } from './pages/ProductPage';
 import { CategoryPage } from './pages/CategoryPage';
@@ -28,6 +28,7 @@ export default function App() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
@@ -153,8 +154,11 @@ export default function App() {
                 </div>
                 <span className="text-xs font-medium hidden sm:inline">Coșul tău</span>
               </button>
-              <button className="md:hidden text-gray-500">
-                <Menu className="w-6 h-6" />
+              <button 
+                className="md:hidden text-gray-500"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
@@ -172,6 +176,45 @@ export default function App() {
               </button>
             </div>
           </div>
+          
+          {/* Mobile Menu Dropdown */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-lg animate-in slide-in-from-top-2">
+              <div className="px-4 pt-2 pb-6 space-y-1">
+                <button
+                  onClick={() => { handleNavigateToHome(); setIsMobileMenuOpen(false); }}
+                  className="block w-full text-left px-3 py-3 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
+                >
+                  Acasă
+                </button>
+                
+                <div className="pt-4 pb-2">
+                  <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Categorii Produse
+                  </p>
+                </div>
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => { handleNavigateToCategory(category.id); setIsMobileMenuOpen(false); }}
+                    className="block w-full text-left px-3 py-3 pl-6 text-base font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-brand-dark"
+                  >
+                    {category.title}
+                  </button>
+                ))}
+                
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => { setCurrentView('account'); setIsMobileMenuOpen(false); }}
+                    className="flex items-center w-full text-left px-3 py-3 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
+                  >
+                    <User className="w-5 h-5 mr-3 text-gray-400" />
+                    Contul meu
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -253,8 +296,15 @@ export default function App() {
                 Partenerul tău de încredere pentru soluții complete de ambalare. Calitate, promptitudine și prețuri de producător.
               </p>
               <div className="text-sm text-gray-600 space-y-2">
-                <p><strong>Email:</strong> contact@euromag-ambalaje.ro</p>
-                <p><strong>Telefon:</strong> 0700 000 000</p>
+                <div>
+                  <strong>Email:</strong>
+                  <ul className="mt-1 space-y-1">
+                    <li><a href="mailto:office@euromag-ambalaje.ro" className="hover:text-brand-dark transition-colors">office@euromag-ambalaje.ro</a></li>
+                    <li><a href="mailto:sales@euromag-ambalaje.ro" className="hover:text-brand-dark transition-colors">sales@euromag-ambalaje.ro</a></li>
+                    <li><a href="mailto:support@euromag-ambalaje.ro" className="hover:text-brand-dark transition-colors">support@euromag-ambalaje.ro</a></li>
+                  </ul>
+                </div>
+                <p><strong>Telefon:</strong> <a href="tel:0740299451" className="hover:text-brand-dark transition-colors">0740299451</a></p>
                 <p><strong>Program:</strong> L-V: 08:00 - 17:00</p>
               </div>
             </div>
@@ -310,6 +360,7 @@ export default function App() {
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

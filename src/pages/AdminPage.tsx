@@ -3,6 +3,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { auth, db, loginWithEmail, logout, handleFirestoreError, OperationType } from '../lib/firebase';
 import { products } from '../data';
+import { Trash2 } from 'lucide-react';
 
 export function AdminPage() {
   const [user, loading] = useAuthState(auth);
@@ -14,6 +15,7 @@ export function AdminPage() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{id: string, type: 'order' | 'quote'} | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +85,28 @@ export function AdminPage() {
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `quotes/${id}`);
+    }
+  };
+
+  const requestDeleteOrder = (id: string) => {
+    setItemToDelete({ id, type: 'order' });
+  };
+
+  const requestDeleteQuote = (id: string) => {
+    setItemToDelete({ id, type: 'quote' });
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      if (itemToDelete.type === 'order') {
+        await deleteDoc(doc(db, 'orders', itemToDelete.id));
+      } else if (itemToDelete.type === 'quote') {
+        await deleteDoc(doc(db, 'quotes', itemToDelete.id));
+      }
+      setItemToDelete(null);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `${itemToDelete.type}s/${itemToDelete.id}`);
     }
   };
 
@@ -256,14 +280,23 @@ export function AdminPage() {
                     <option value="finalizata">Finalizată</option>
                     <option value="anulata">Anulată</option>
                   </select>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    order.status === 'noua' ? 'bg-blue-100 text-blue-700' :
-                    order.status === 'in_lucru' ? 'bg-yellow-100 text-yellow-700' :
-                    order.status === 'finalizata' ? 'bg-green-100 text-green-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {order.status}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      order.status === 'noua' ? 'bg-blue-100 text-blue-700' :
+                      order.status === 'in_lucru' ? 'bg-yellow-100 text-yellow-700' :
+                      order.status === 'finalizata' ? 'bg-green-100 text-green-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {order.status}
+                    </span>
+                    <button 
+                      onClick={() => requestDeleteOrder(order.id)}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                      title="Șterge comanda"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -304,14 +337,23 @@ export function AdminPage() {
                     <option value="oferta_trimisa">Ofertă Trimisă</option>
                     <option value="inchisa">Închisă</option>
                   </select>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    quote.status === 'noua' ? 'bg-blue-100 text-blue-700' :
-                    quote.status === 'contactat' ? 'bg-yellow-100 text-yellow-700' :
-                    quote.status === 'oferta_trimisa' ? 'bg-purple-100 text-purple-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {quote.status}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      quote.status === 'noua' ? 'bg-blue-100 text-blue-700' :
+                      quote.status === 'contactat' ? 'bg-yellow-100 text-yellow-700' :
+                      quote.status === 'oferta_trimisa' ? 'bg-purple-100 text-purple-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {quote.status}
+                    </span>
+                    <button 
+                      onClick={() => requestDeleteQuote(quote.id)}
+                      className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                      title="Șterge cererea"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -332,6 +374,32 @@ export function AdminPage() {
             <p className="text-gray-500 text-sm mb-4">Stabiliți prețurile pentru fiecare variație în parte. Dacă lăsați un câmp gol, sistemul va folosi prețul de bază al produsului.</p>
             <ProductPricesEditor />
           </section>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6 animate-in fade-in zoom-in-95">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Confirmare Ștergere</h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              Sigur doriți să ștergeți {itemToDelete.type === 'order' ? 'această comandă' : 'această cerere de ofertă'}? Această acțiune este ireversibilă.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setItemToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Anulează
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Șterge
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -419,19 +487,20 @@ function SettingsEditor() {
 }
 
 function ProductPricesEditor() {
-  const [productData, setProductData] = useState<Record<string, { prices: Record<string, number | string>, basePrice: number | string, discount: number | string }>>({});
+  const [productData, setProductData] = useState<Record<string, { prices: Record<string, number | string>, basePrice: number | string, discount: number | string, isOutOfStock?: boolean }>>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'product_prices'), (snapshot) => {
-      const data: Record<string, { prices: Record<string, number | string>, basePrice: number | string, discount: number | string }> = {};
+      const data: Record<string, { prices: Record<string, number | string>, basePrice: number | string, discount: number | string, isOutOfStock?: boolean }> = {};
       snapshot.forEach(doc => {
         data[doc.id] = {
           prices: doc.data().prices || {},
           basePrice: doc.data().basePrice || 0,
-          discount: doc.data().discount || 0
+          discount: doc.data().discount || 0,
+          isOutOfStock: doc.data().isOutOfStock || false
         };
       });
       setProductData(data);
@@ -447,7 +516,7 @@ function ProductPricesEditor() {
     setProductData(prev => ({
       ...prev,
       [productId]: {
-        ...(prev[productId] || { prices: {}, basePrice: 0, discount: 0 }),
+        ...(prev[productId] || { prices: {}, basePrice: 0, discount: 0, isOutOfStock: false }),
         prices: {
           ...(prev[productId]?.prices || {}),
           [variantKey]: value
@@ -456,11 +525,11 @@ function ProductPricesEditor() {
     }));
   };
 
-  const handleDataChange = (productId: string, field: 'basePrice' | 'discount', value: string) => {
+  const handleDataChange = (productId: string, field: 'basePrice' | 'discount' | 'isOutOfStock', value: any) => {
     setProductData(prev => ({
       ...prev,
       [productId]: {
-        ...(prev[productId] || { prices: {}, basePrice: 0, discount: 0 }),
+        ...(prev[productId] || { prices: {}, basePrice: 0, discount: 0, isOutOfStock: false }),
         [field]: value
       }
     }));
@@ -470,7 +539,7 @@ function ProductPricesEditor() {
     setSavingId(productId);
     setSuccessMsg('');
     try {
-      const data = productData[productId] || { prices: {}, basePrice: 0, discount: 0 };
+      const data = productData[productId] || { prices: {}, basePrice: 0, discount: 0, isOutOfStock: false };
       
       const parsedPrices: Record<string, number> = {};
       for (const [key, val] of Object.entries(data.prices)) {
@@ -480,7 +549,8 @@ function ProductPricesEditor() {
       const formattedData = {
         prices: parsedPrices,
         basePrice: data.basePrice === '' ? 0 : Number(data.basePrice),
-        discount: data.discount === '' ? 0 : Number(data.discount)
+        discount: data.discount === '' ? 0 : Number(data.discount),
+        isOutOfStock: Boolean(data.isOutOfStock)
       };
 
       await setDoc(doc(db, 'product_prices', productId), formattedData, { merge: true });
@@ -501,7 +571,7 @@ function ProductPricesEditor() {
       
       {products.map(product => {
         const dimensiuni = product.options.find(o => o.id === 'dimensiune')?.values || [];
-        const currentData = productData[product.id] || { prices: {}, basePrice: 0, discount: 0 };
+        const currentData = productData[product.id] || { prices: {}, basePrice: 0, discount: 0, isOutOfStock: false };
         
         return (
           <div key={product.id} className="border border-gray-200 rounded-lg p-6 bg-white overflow-hidden shadow-sm">
@@ -551,6 +621,21 @@ function ProductPricesEditor() {
                   className="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-brand-light focus:outline-none focus:ring-2 font-medium"
                 />
                 <p className="text-xs text-gray-500 mt-1">Se aplică reducerii la toate variațiile acestui produs.</p>
+              </div>
+
+              <div className="flex items-center mt-4 sm:mt-0 sm:col-span-2">
+                <label className="flex items-center cursor-pointer p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100 w-full">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(currentData.isOutOfStock)}
+                    onChange={(e) => handleDataChange(product.id, 'isOutOfStock', e.target.checked)}
+                    className="w-5 h-5 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                  />
+                  <div className="ml-3 flex flex-col">
+                    <span className="text-sm font-bold text-red-900">Stoc Epuizat (Indisponibil)</span>
+                    <span className="text-xs text-red-700">Blochează comanda pentru acest produs.</span>
+                  </div>
+                </label>
               </div>
             </div>
 

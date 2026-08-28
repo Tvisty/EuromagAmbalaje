@@ -1,23 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} { 
-      allow read, write: if false; 
-    }
+    match /{document=**} {
+       allow read, write: if false;
+     }
 
     // Global Helpers
-    function isValidId(id) { 
-      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
-    }
+    function isValidId(id) {
+       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+     }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isSignedIn() { return request.auth != null; }
-    function isAdmin() { 
-      return isSignedIn() && (
+    function isAdmin() {
+       return isSignedIn() && (
         ('email' in request.auth.token && request.auth.token.email in ["gleczfalvi@gmail.com", "euromagambalaje@gmail.com"]) || 
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-      ); 
-    }
+      );
+     }
 
     // Order Validations
     function isValidOrder(data) {
@@ -33,11 +33,11 @@ service cloud.firestore {
         && (data.keys().hasAll(['orderNotes']) == false || data.orderNotes is string)
         && (data.keys().hasAll(['paymentMethod']) == false || data.paymentMethod is string)
         && (data.keys().hasAll(['deliveryMethod']) == false || data.deliveryMethod is string)
-        && data.createdAt == request.time;
+        && data.createdAt is timestamp;
     }
 
     match /orders/{orderId} {
-      allow create: if isValidId(orderId) && isValidOrder(incoming());
+      allow create: if isValidId(orderId) && isValidOrder(incoming()) && incoming().createdAt == request.time;
       allow read: if isAdmin() || (isSignedIn() && resource.data.customerEmail == request.auth.token.email);
       allow delete: if isAdmin();
       allow update: if isAdmin() && isValidOrder(incoming()) && incoming().createdAt == existing().createdAt;
@@ -53,11 +53,11 @@ service cloud.firestore {
         && (data.keys().hasAll(['cui']) == false || data.cui is string)
         && (data.keys().hasAll(['contactName']) == false || data.contactName is string)
         && (data.keys().hasAll(['message']) == false || data.message is string)
-        && data.createdAt == request.time;
+        && data.createdAt is timestamp;
     }
 
     match /quotes/{quoteId} {
-      allow create: if isValidId(quoteId) && isValidQuote(incoming());
+      allow create: if isValidId(quoteId) && isValidQuote(incoming()) && incoming().createdAt == request.time;
       allow read, delete: if isAdmin();
       allow update: if isAdmin() && isValidQuote(incoming()) && incoming().createdAt == existing().createdAt;
     }

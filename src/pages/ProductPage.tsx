@@ -18,7 +18,7 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
 
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(initialOptions);
   const [quantity, setQuantity] = useState<number>(100);
-  const [productData, setProductData] = useState<{ prices: Record<string, number>, basePrice: number, discount: number }>({ prices: {}, basePrice: 0, discount: 0 });
+  const [productData, setProductData] = useState<{ prices: Record<string, number>, basePrice: number, discount: number, isOutOfStock?: boolean }>({ prices: {}, basePrice: 0, discount: 0, isOutOfStock: false });
   
   // Use product.images array if available, otherwise default to product.image
   const productImages = product.images && product.images.length > 0 ? product.images : [product.image];
@@ -33,7 +33,8 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
           setProductData({
              prices: data.prices || {},
              basePrice: data.basePrice || 0,
-             discount: data.discount || 0
+             discount: data.discount || 0,
+             isOutOfStock: data.isOutOfStock || false
           });
         }
       } catch (err) {
@@ -199,10 +200,15 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
 
               <button 
                 onClick={() => onAddToCart({ product, quantity, totalPrice, selectedOptions })}
-                className="w-full bg-brand-dark hover:bg-brand-dark/90 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 text-lg"
+                disabled={productData.isOutOfStock}
+                className={`w-full font-bold py-4 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 text-lg ${
+                  productData.isOutOfStock
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none hover:bg-gray-300 hover:shadow-none'
+                    : 'bg-brand-dark hover:bg-brand-dark/90 text-white hover:shadow-xl'
+                }`}
               >
                 <ShoppingCart className="w-6 h-6" />
-                Adaugă în coș
+                {productData.isOutOfStock ? 'Indisponibil (Stoc Epuizat)' : 'Adaugă în coș'}
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-100">
