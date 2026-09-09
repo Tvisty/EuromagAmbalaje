@@ -30,9 +30,19 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onClearCart }: Check
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validare manuală pentru siguranță
+    if (!formData.customerName || !formData.customerEmail || !formData.customerPhone) {
+      alert("Te rugăm să completezi toate câmpurile obligatorii (Nume, Email, Telefon)!");
+      return;
+    }
+    
     setIsSubmitting(true);
+    console.log("=== START PROCESARE COMANDĂ ===");
     try {
       const isCardPayment = formData.paymentMethod === 'card';
+      console.log("Metodă plată:", isCardPayment ? "Stripe (Card)" : "Ramburs");
+      
       const newOrderRef = await addDoc(collection(db, 'orders'), {
         ...formData,
         deliveryAddress: formData.deliveryMethod === 'ridicare' ? 'Ridicare personală' : formData.deliveryAddress,
@@ -47,8 +57,11 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onClearCart }: Check
         status: isCardPayment ? 'plata_in_asteptare' : 'noua',
         createdAt: serverTimestamp()
       });
+      
+      console.log("Comandă salvată în Firebase cu ID-ul:", newOrderRef.id);
 
       if (isCardPayment) {
+        console.log("Se trimit datele către serverul intern pentru Stripe...");
         // Call backend to create Stripe Checkout session
         const response = await fetch('/api/create-checkout-session', {
           method: 'POST',
@@ -66,8 +79,16 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onClearCart }: Check
         });
 
         const data = await response.json();
+        console.log("Răspuns de la serverul Stripe:", data);
+        
         if (data.url) {
-          window.location.href = data.url; // Redirect to Stripe Checkout
+          if (window.self !== window.top) {
+             alert("Atenție: Deschide aplicația într-un tab nou pentru a finaliza plata.");
+             window.open(data.url, '_blank');
+          } else {
+             console.log("Redirecționare către:", data.url);
+             window.location.href = data.url; // Redirect to Stripe Checkout
+          }
           return;
         } else {
           throw new Error(data.error || 'Failed to initialize payment');
@@ -81,8 +102,9 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onClearCart }: Check
         onClose();
         setFormData({ ...formData, customerName: '', customerEmail: '', customerPhone: '', deliveryAddress: '', billingDetails: '', orderNotes: '' });
       }, 3000);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("EROARE CATCH:", error);
+      alert('Eroare la procesarea comenzii: ' + (error.message || 'Eroare necunoscută'));
       handleFirestoreError(error, OperationType.CREATE, 'orders');
     } finally {
       setIsSubmitting(false);
