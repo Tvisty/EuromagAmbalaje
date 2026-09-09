@@ -93,6 +93,21 @@ export default function App() {
     setCartItems([]);
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    const orderId = params.get('orderId');
+
+    if (paymentStatus === 'success' && orderId) {
+      alert('Plata a fost procesată cu succes! Comanda ta a fost plasată.');
+      handleClearCart();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (paymentStatus === 'cancel' && orderId) {
+      alert('Plata a fost anulată. Comanda a rămas în stadiul "Așteptare Plată".');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-white">
       {/* Top Banner */}

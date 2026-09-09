@@ -276,6 +276,8 @@ export function AdminPage() {
                     className="border border-gray-300 rounded p-1 mb-2 text-sm w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-light"
                   >
                     <option value="noua">Nouă</option>
+                    <option value="plata_in_asteptare">Așteptare Plată</option>
+                    <option value="platita">Plătită</option>
                     <option value="in_lucru">În Lucru</option>
                     <option value="finalizata">Finalizată</option>
                     <option value="anulata">Anulată</option>
@@ -283,6 +285,8 @@ export function AdminPage() {
                   <div className="flex items-center gap-3">
                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                       order.status === 'noua' ? 'bg-blue-100 text-blue-700' :
+                      order.status === 'plata_in_asteptare' ? 'bg-orange-100 text-orange-700' :
+                      order.status === 'platita' ? 'bg-emerald-100 text-emerald-700' :
                       order.status === 'in_lucru' ? 'bg-yellow-100 text-yellow-700' :
                       order.status === 'finalizata' ? 'bg-green-100 text-green-700' :
                       'bg-red-100 text-red-700'

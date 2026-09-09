@@ -32,7 +32,8 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onClearCart }: Check
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'orders'), {
+      const isCardPayment = formData.paymentMethod === 'card';
+      const newOrderRef = await addDoc(collection(db, 'orders'), {
         ...formData,
         deliveryAddress: formData.deliveryMethod === 'ridicare' ? 'Ridicare personală' : formData.deliveryAddress,
         items: cartItems.map(item => ({
@@ -43,17 +44,45 @@ export function CheckoutModal({ isOpen, onClose, cartItems, onClearCart }: Check
           selectedOptions: item.selectedOptions
         })),
         totalPrice: totalOrderPrice,
-        status: 'noua',
+        status: isCardPayment ? 'plata_in_asteptare' : 'noua',
         createdAt: serverTimestamp()
       });
+
+      if (isCardPayment) {
+        // Call backend to create Stripe Checkout session
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cartItems.map(item => ({
+              productTitle: item.product.title,
+              selectedOptions: item.selectedOptions,
+              quantity: item.quantity,
+              totalPrice: item.totalPrice
+            })),
+            orderId: newOrderRef.id,
+            customerEmail: formData.customerEmail
+          })
+        });
+
+        const data = await response.json();
+        if (data.url) {
+          window.location.href = data.url; // Redirect to Stripe Checkout
+          return;
+        } else {
+          throw new Error(data.error || 'Failed to initialize payment');
+        }
+      }
+
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
         onClearCart();
         onClose();
-        setFormData({ customerName: '', customerEmail: '', customerPhone: '', deliveryAddress: '', billingDetails: '', orderNotes: '' });
+        setFormData({ ...formData, customerName: '', customerEmail: '', customerPhone: '', deliveryAddress: '', billingDetails: '', orderNotes: '' });
       }, 3000);
     } catch (error) {
+      console.error(error);
       handleFirestoreError(error, OperationType.CREATE, 'orders');
     } finally {
       setIsSubmitting(false);
