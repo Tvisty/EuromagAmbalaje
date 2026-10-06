@@ -174,9 +174,7 @@ export const products: Product[] = [
           '600 x 400 x 200 mm',
           '600 x 300 x 300 mm',
           '600 x 400 x 300 mm',
-          '600 x 400 x 400 mm',
-          '800 x 500 x 300 mm',
-          '800 x 500 x 400 mm'
+          '600 x 400 x 400 mm'
         ]
       }
     ]
@@ -216,15 +214,15 @@ export const products: Product[] = [
   {
     id: 'sacose-maieu',
     categoryId: 'pungi',
-    title: 'Sacoșe tip maieu 60x32 de 50 microni',
-    description: 'Sacoșe tip maieu foarte rezistente, grosime 50 microni. Perfecte pentru retail și transport produse grele.',
+    title: 'Sacoșe tip maieu 60x32x2x9 de 50 microni',
+    description: 'Sacoșe tip maieu foarte rezistente, dimensiune 60x32x2x9 cm, grosime 50 microni. Perfecte pentru retail și transport produse grele.',
     image: '/sacose-maieu-1.webp',
     images: ['/sacose-maieu-1.webp', '/sacose-maieu-2.webp'],
     basePrice: 0.35,
     minimumOrder: '500 buc / cutie',
     features: [
       'Grosime: 50 microni',
-      'Dimensiune: 60 x 32 cm',
+      'Dimensiune: 60x32x2x9 cm',
       'Tip: Maieu'
     ],
     options: []

@@ -16,9 +16,15 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
     return acc;
   }, {} as Record<string, string>);
 
+  const isCustomQuantityCategory = product.categoryId === 'pizza' || product.categoryId === 'carton' || product.id.startsWith('pizza') || product.id.startsWith('carton');
+
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(initialOptions);
-  const [quantity, setQuantity] = useState<number>(100);
+  const [quantity, setQuantity] = useState<number | ''>(isCustomQuantityCategory ? '' : 100);
   const [productData, setProductData] = useState<{ prices: Record<string, number>, basePrice: number, discount: number, isOutOfStock?: boolean }>({ prices: {}, basePrice: 0, discount: 0, isOutOfStock: false });
+  
+  useEffect(() => {
+    setQuantity(isCustomQuantityCategory ? '' : 100);
+  }, [product.id, isCustomQuantityCategory]);
   
   // Use product.images array if available, otherwise default to product.image
   const productImages = product.images && product.images.length > 0 ? product.images : [product.image];
@@ -70,9 +76,11 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
     return originalPricePerPiece;
   }, [originalPricePerPiece, productData.discount]);
 
+  const parsedQuantity = typeof quantity === 'number' ? quantity : (parseInt(String(quantity), 10) || 0);
+
   const totalPrice = useMemo(() => {
-    return currentPricePerPiece * quantity;
-  }, [currentPricePerPiece, quantity]);
+    return currentPricePerPiece * parsedQuantity;
+  }, [currentPricePerPiece, parsedQuantity]);
 
   return (
     <div className="bg-bg-light min-h-screen py-12">
@@ -132,13 +140,15 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
                     {productData.discount > 0 && (
                       <span className="text-lg text-gray-400 line-through mb-1 ml-1">{originalPricePerPiece.toFixed(2)} RON</span>
                     )}
-                    <span className="text-gray-400 mb-1">+TVA</span>
+                    <span className="text-gray-400 mb-1 text-sm">(Tva inclus)</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500 font-medium mb-1">Ambalare</p>
-                  <span className="font-semibold text-gray-800">{product.minimumOrder}</span>
-                </div>
+                {!isCustomQuantityCategory && product.minimumOrder && (
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500 font-medium mb-1">Ambalare</p>
+                    <span className="font-semibold text-gray-800">{product.minimumOrder}</span>
+                  </div>
+                )}
               </div>
 
               {/* Options */}
@@ -173,33 +183,94 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
 
               {/* Quantity */}
               <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-900 mb-3">
-                  Cantitate Dorită (BUC)
-                </label>
-                <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden w-48">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-bold text-gray-900">
+                    Cantitate Dorită (BUC)
+                  </label>
+                  {isCustomQuantityCategory && (
+                    <span className="text-xs text-brand-dark bg-brand-light/10 font-medium px-2 py-0.5 rounded-md">
+                      Introduceți cantitatea dorită
+                    </span>
+                  )}
+                </div>
+                <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden w-56 focus-within:ring-2 focus-within:ring-brand-light focus-within:border-brand-dark transition-all">
                   <button 
-                    onClick={() => setQuantity(Math.max(100, quantity - 100))}
-                    className="w-12 h-12 flex justify-center items-center text-gray-500 hover:bg-gray-50 hover:text-brand-dark transition-colors"
+                    type="button"
+                    onClick={() => {
+                      const current = typeof quantity === 'number' ? quantity : (parseInt(String(quantity), 10) || 0);
+                      if (isCustomQuantityCategory) {
+                        if (current <= 1) {
+                          setQuantity('');
+                        } else if (current <= 10) {
+                          setQuantity(current - 1);
+                        } else if (current <= 50) {
+                          setQuantity(current - 5);
+                        } else {
+                          setQuantity(current - 10);
+                        }
+                      } else {
+                        setQuantity(Math.max(100, current - 100));
+                      }
+                    }}
+                    className="w-12 h-12 flex justify-center items-center text-gray-500 hover:bg-gray-50 hover:text-brand-dark transition-colors font-bold text-lg select-none"
                   >
                     -
                   </button>
                   <input 
                     type="number" 
+                    min="1"
+                    placeholder={isCustomQuantityCategory ? "Scrieți cantitatea" : "100"}
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    className="w-full text-center font-bold text-gray-900 focus:outline-none"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setQuantity('');
+                      } else {
+                        const num = parseInt(val, 10);
+                        setQuantity(isNaN(num) || num <= 0 ? '' : num);
+                      }
+                    }}
+                    className="w-full text-center font-bold text-gray-900 focus:outline-none placeholder:text-xs placeholder:font-normal placeholder:text-gray-400"
                   />
                   <button 
-                    onClick={() => setQuantity(quantity + 100)}
-                    className="w-12 h-12 flex justify-center items-center text-gray-500 hover:bg-gray-50 hover:text-brand-dark transition-colors"
+                    type="button"
+                    onClick={() => {
+                      const current = typeof quantity === 'number' ? quantity : (parseInt(String(quantity), 10) || 0);
+                      if (isCustomQuantityCategory) {
+                        if (current === 0) {
+                          setQuantity(10);
+                        } else if (current < 10) {
+                          setQuantity(current + 1);
+                        } else if (current < 50) {
+                          setQuantity(current + 5);
+                        } else {
+                          setQuantity(current + 10);
+                        }
+                      } else {
+                        setQuantity((current || 0) + 100);
+                      }
+                    }}
+                    className="w-12 h-12 flex justify-center items-center text-gray-500 hover:bg-gray-50 hover:text-brand-dark transition-colors font-bold text-lg select-none"
                   >
                     +
                   </button>
                 </div>
+                {parsedQuantity > 0 && (
+                  <p className="text-sm text-gray-600 mt-2 font-medium">
+                    Total estimat: <span className="font-bold text-brand-dark">{totalPrice.toFixed(2)} RON</span> <span className="text-gray-400 text-xs">(Tva inclus)</span>
+                  </p>
+                )}
               </div>
 
               <button 
-                onClick={() => onAddToCart({ product, quantity, totalPrice, selectedOptions })}
+                onClick={() => {
+                  if (productData.isOutOfStock) return;
+                  if (!parsedQuantity || parsedQuantity <= 0) {
+                    alert("Vă rugăm să introduceți cantitatea dorită înainte de a adăuga în coș.");
+                    return;
+                  }
+                  onAddToCart({ product, quantity: parsedQuantity, totalPrice, selectedOptions });
+                }}
                 disabled={productData.isOutOfStock}
                 className={`w-full font-bold py-4 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 text-lg ${
                   productData.isOutOfStock
@@ -208,7 +279,14 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
                 }`}
               >
                 <ShoppingCart className="w-6 h-6" />
-                {productData.isOutOfStock ? 'Indisponibil (Stoc Epuizat)' : 'Adaugă în coș'}
+                {productData.isOutOfStock 
+                  ? 'Indisponibil (Stoc Epuizat)' 
+                  : (!parsedQuantity || parsedQuantity <= 0) && isCustomQuantityCategory
+                    ? 'Introduceți cantitatea dorită'
+                    : parsedQuantity > 0 
+                      ? `Adaugă în coș • ${totalPrice.toFixed(2)} RON`
+                      : 'Adaugă în coș'
+                }
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-100">

@@ -69,7 +69,7 @@ export function ProductCard({ product, onNavigateToProduct }: ProductCardProps) 
               <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider mb-0.5">Preț minim per bucată</span>
               <div className="flex items-end gap-1">
                  <div className={`text-xl font-bold ${isOutOfStock ? 'text-gray-400 line-through' : 'text-brand-dark'}`}>{basePrice.toFixed(2)}</div>
-                 <div className="text-xs font-medium text-gray-500 mb-[3px]">RON +TVA</div>
+                 <div className="text-xs font-medium text-gray-500 mb-[3px]">RON (Tva inclus)</div>
               </div>
            </div>
         </div>
