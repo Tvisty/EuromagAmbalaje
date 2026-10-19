@@ -19,12 +19,59 @@ import { CartItem } from './types';
 import { AccountPage } from './pages/AccountPage';
 import { InfoPage } from './pages/InfoPage';
 
+interface RouteState {
+  view: 'home' | 'category' | 'product' | 'admin' | 'account' | 'info';
+  categoryId: string | null;
+  productId: string | null;
+  infoSection: 'shipping' | 'returns';
+}
+
+function parseUrl(path: string): RouteState {
+  const cleanPath = path.replace(/^\/+|\/+$/g, '');
+  if (!cleanPath) {
+    return { view: 'home', categoryId: null, productId: null, infoSection: 'shipping' };
+  }
+
+  const [segment1, segment2] = cleanPath.split('/');
+
+  if (segment1 === 'categorie' || segment1 === 'categorii') {
+    return { view: 'category', categoryId: segment2 || null, productId: null, infoSection: 'shipping' };
+  }
+
+  if (segment1 === 'produs' || segment1 === 'produse') {
+    const product = products.find(p => p.id === segment2);
+    return {
+      view: 'product',
+      categoryId: product ? product.categoryId : null,
+      productId: segment2 || null,
+      infoSection: 'shipping',
+    };
+  }
+
+  if (segment1 === 'cont') {
+    return { view: 'account', categoryId: null, productId: null, infoSection: 'shipping' };
+  }
+
+  if (segment1 === 'admin') {
+    return { view: 'admin', categoryId: null, productId: null, infoSection: 'shipping' };
+  }
+
+  if (segment1 === 'informatii' || segment1 === 'info') {
+    const sec = segment2 === 'retur' || segment2 === 'returns' ? 'returns' : 'shipping';
+    return { view: 'info', categoryId: null, productId: null, infoSection: sec };
+  }
+
+  return { view: 'home', categoryId: null, productId: null, infoSection: 'shipping' };
+}
+
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin' | 'account' | 'info'>('home');
-  const [infoSection, setInfoSection] = useState<'shipping' | 'returns'>('shipping');
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  
+  const initialRoute = parseUrl(typeof window !== 'undefined' ? window.location.pathname : '/');
+  const [currentView, setCurrentView] = useState<'home' | 'category' | 'product' | 'admin' | 'account' | 'info'>(initialRoute.view);
+  const [infoSection, setInfoSection] = useState<'shipping' | 'returns'>(initialRoute.infoSection);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(initialRoute.productId);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(initialRoute.categoryId);
   const [minOrder, setMinOrder] = useState<number>(500);
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -43,37 +90,80 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  const handleNavigateToCategory = (categoryId: string) => {
-    setSelectedCategoryId(categoryId);
-    setCurrentView('category');
+  const navigateTo = (url: string, replace = false) => {
+    if (typeof window !== 'undefined') {
+      if (replace) {
+        window.history.replaceState({}, '', url);
+      } else {
+        window.history.pushState({}, '', url);
+      }
+    }
+    const route = parseUrl(url.split('?')[0]);
+    setCurrentView(route.view);
+    setSelectedCategoryId(route.categoryId);
+    setSelectedProductId(route.productId);
+    setInfoSection(route.infoSection);
     window.scrollTo(0, 0);
+  };
+
+  // Sync state on browser back/forward buttons (Chrome Back button)
+  useEffect(() => {
+    const handlePopState = () => {
+      const route = parseUrl(window.location.pathname);
+      setCurrentView(route.view);
+      setSelectedCategoryId(route.categoryId);
+      setSelectedProductId(route.productId);
+      setInfoSection(route.infoSection);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleNavigateToCategory = (categoryId: string) => {
+    navigateTo(`/categorie/${categoryId}`);
   };
 
   const handleNavigateToProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      setSelectedCategoryId(product.categoryId);
-    }
-    setSelectedProductId(productId);
-    setCurrentView('product');
-    window.scrollTo(0, 0);
+    navigateTo(`/produs/${productId}`);
   };
 
   const handleNavigateToHome = () => {
-    setSelectedProductId(null);
-    setSelectedCategoryId(null);
-    setCurrentView('home');
-    window.scrollTo(0, 0);
+    navigateTo('/');
   };
 
   const handleNavigateToAdmin = () => {
-    setCurrentView('admin');
-    window.scrollTo(0, 0);
+    navigateTo('/admin');
+  };
+
+  const handleNavigateToAccount = () => {
+    navigateTo('/cont');
+  };
+
+  const handleNavigateToInfo = (section: 'shipping' | 'returns') => {
+    navigateTo(`/informatii/${section}`);
   };
 
   const currentProduct = products.find(p => p.id === selectedProductId);
   const currentCategory = categories.find(c => c.id === selectedCategoryId);
   const categoryProducts = products.filter(p => p.categoryId === selectedCategoryId);
+
+  // Sync document title with current page
+  useEffect(() => {
+    if (currentView === 'product' && currentProduct) {
+      document.title = `${currentProduct.title} | Euromag Ambalaje`;
+    } else if (currentView === 'category' && currentCategory) {
+      document.title = `${currentCategory.title} | Euromag Ambalaje`;
+    } else if (currentView === 'account') {
+      document.title = 'Contul Meu | Euromag Ambalaje';
+    } else if (currentView === 'admin') {
+      document.title = 'Panou Administrare | Euromag Ambalaje';
+    } else if (currentView === 'info') {
+      document.title = infoSection === 'returns' ? 'Politica de Retur | Euromag Ambalaje' : 'Livrare și Plată | Euromag Ambalaje';
+    } else {
+      document.title = 'Euromag Ambalaje - Producător Cutii Carton & Ambalaje';
+    }
+  }, [currentView, currentProduct, currentCategory, infoSection]);
 
   const handleAddToCart = (item: Omit<CartItem, 'id'>) => {
     setCartItems([...cartItems, { ...item, id: Date.now().toString() }]);
@@ -152,7 +242,7 @@ export default function App() {
             <div className="flex items-center gap-6">
               <button 
                 className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors"
-                onClick={() => setCurrentView('account')}
+                onClick={handleNavigateToAccount}
               >
                 <User className="w-6 h-6 mb-1" />
                 <span className="text-xs font-medium hidden sm:inline">Contul meu</span>
@@ -222,7 +312,7 @@ export default function App() {
                 
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <button
-                    onClick={() => { setCurrentView('account'); setIsMobileMenuOpen(false); }}
+                    onClick={() => { handleNavigateToAccount(); setIsMobileMenuOpen(false); }}
                     className="flex items-center w-full text-left px-3 py-3 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
                   >
                     <User className="w-5 h-5 mr-3 text-gray-400" />
@@ -256,25 +346,47 @@ export default function App() {
           <HomePage onNavigateToCategory={handleNavigateToCategory} />
         )}
         
-        {currentView === 'category' && currentCategory && (
+        {currentView === 'category' && currentCategory ? (
           <CategoryPage 
             category={currentCategory} 
             products={categoryProducts} 
             onNavigateToProduct={handleNavigateToProduct}
             onNavigateBack={handleNavigateToHome}
           />
-        )}
+        ) : currentView === 'category' ? (
+          <div className="py-20 text-center max-w-md mx-auto px-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Categoria nu a fost găsită</h2>
+            <p className="text-gray-500 mb-6">Ne pare rău, dar categoria solicitată nu există.</p>
+            <button 
+              onClick={handleNavigateToHome}
+              className="bg-brand-dark text-white font-medium px-6 py-2.5 rounded-lg hover:bg-brand-dark/90 transition-colors"
+            >
+              Înapoi la pagina principală
+            </button>
+          </div>
+        ) : null}
 
-        {currentView === 'product' && currentProduct && (
+        {currentView === 'product' && currentProduct ? (
           <ProductPage product={currentProduct} onAddToCart={handleAddToCart} />
-        )}
+        ) : currentView === 'product' ? (
+          <div className="py-20 text-center max-w-md mx-auto px-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Produsul nu a fost găsit</h2>
+            <p className="text-gray-500 mb-6">Ne pare rău, dar produsul solicitat nu există.</p>
+            <button 
+              onClick={handleNavigateToHome}
+              className="bg-brand-dark text-white font-medium px-6 py-2.5 rounded-lg hover:bg-brand-dark/90 transition-colors"
+            >
+              Înapoi la pagina principală
+            </button>
+          </div>
+        ) : null}
 
         {currentView === 'admin' && (
           <AdminPage />
         )}
 
         {currentView === 'account' && (
-          <AccountPage onBack={() => setCurrentView('home')} />
+          <AccountPage onBack={handleNavigateToHome} />
         )}
         {currentView === 'info' && (
           <InfoPage section={infoSection} />
@@ -344,8 +456,8 @@ export default function App() {
             <div>
               <h4 className="font-bold text-gray-900 mb-4">Informații Utile</h4>
               <ul className="space-y-2 text-sm text-gray-500">
-                <li><button onClick={() => { setInfoSection('shipping'); setCurrentView('info'); }} className="hover:text-brand-dark transition-colors">Livrare și Plată</button></li>
-                <li><button onClick={() => { setInfoSection('returns'); setCurrentView('info'); }} className="hover:text-brand-dark transition-colors">Politica de Retur</button></li>
+                <li><button onClick={() => handleNavigateToInfo('shipping')} className="hover:text-brand-dark transition-colors">Livrare și Plată</button></li>
+                <li><button onClick={() => handleNavigateToInfo('returns')} className="hover:text-brand-dark transition-colors">Politica de Retur</button></li>
               </ul>
             </div>
             
@@ -371,8 +483,8 @@ export default function App() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center lg:justify-end gap-x-6 gap-y-4 text-sm text-gray-400 order-1 lg:order-2">
-              <a href="#" className="hover:text-gray-600 transition-colors">Termeni și Condiții</a>
-              <a href="#" className="hover:text-gray-600 transition-colors">Politica de Confidențialitate</a>
+              <button onClick={() => handleNavigateToInfo('shipping')} className="hover:text-gray-600 transition-colors cursor-pointer">Termeni și Condiții</button>
+              <button onClick={() => handleNavigateToInfo('returns')} className="hover:text-gray-600 transition-colors cursor-pointer">Politica de Confidențialitate</button>
 
               {/* ANPC Banners - side by side right next to Politica de Confidențialitate */}
               <div className="flex items-center gap-3 shrink-0">

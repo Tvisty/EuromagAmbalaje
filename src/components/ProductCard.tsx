@@ -5,6 +5,7 @@ import { db } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 interface ProductCardProps {
+  key?: string;
   product: Product;
   onNavigateToProduct: (productId: string) => void;
 }
