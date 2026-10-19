@@ -365,14 +365,46 @@ export default function App() {
             </div>
           </div>
           
-          <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-400">
+          <div className="border-t border-gray-200 pt-8 flex flex-col lg:flex-row justify-between items-center gap-6">
+            <p className="text-sm text-gray-400 text-center lg:text-left order-2 lg:order-1">
               <span onClick={handleNavigateToAdmin} className="cursor-pointer">&copy;</span> {new Date().getFullYear()} Euromag Ambalaje. Toate drepturile rezervate.
             </p>
-            <div className="flex gap-4 text-sm text-gray-400">
-              <a href="#" className="hover:text-gray-600">Termeni și Condiții</a>
-              <a href="#" className="hover:text-gray-600">Politica de Confidențialitate</a>
-              <a href="#" className="hover:text-gray-600">ANPC</a>
+
+            <div className="flex flex-wrap items-center justify-center lg:justify-end gap-x-6 gap-y-4 text-sm text-gray-400 order-1 lg:order-2">
+              <a href="#" className="hover:text-gray-600 transition-colors">Termeni și Condiții</a>
+              <a href="#" className="hover:text-gray-600 transition-colors">Politica de Confidențialitate</a>
+
+              {/* ANPC Banners - side by side right next to Politica de Confidențialitate */}
+              <div className="flex items-center gap-3 shrink-0">
+                <a 
+                  href="https://www.anpc.ro/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="transition-transform hover:scale-105 inline-block shrink-0"
+                  title="Autoritatea Națională pentru Protecția Consumatorilor"
+                >
+                  <img 
+                    src="/anpc-7olgttv.png" 
+                    alt="ANPC - www.anpc.ro" 
+                    className="h-10 sm:h-12 md:h-14 w-auto object-contain rounded-md border border-gray-200 bg-white p-1 hover:border-gray-300 transition-all shadow-xs"
+                    loading="lazy"
+                  />
+                </a>
+                <a 
+                  href="https://eservicii.anpc.ro/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="transition-transform hover:scale-105 inline-block shrink-0"
+                  title="ANPC E-Servicii"
+                >
+                  <img 
+                    src="/anpc-ibpa8jn.png" 
+                    alt="ANPC E-Servicii" 
+                    className="h-10 sm:h-12 md:h-14 w-auto object-contain rounded-md border border-gray-200 bg-white p-1 hover:border-gray-300 transition-all shadow-xs"
+                    loading="lazy"
+                  />
+                </a>
+              </div>
             </div>
           </div>
         </div>

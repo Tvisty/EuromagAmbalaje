@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Package, Truck, ShieldCheck, Scissors } from 'lucide-react';
+import { ChevronRight, Package, Truck, ShieldCheck, Scissors, CheckCircle2 } from 'lucide-react';
 import { categories } from '../data';
 import { QuoteModal } from '../components/QuoteModal';
 
@@ -14,51 +14,72 @@ export function HomePage({ onNavigateToCategory }: HomePageProps) {
     <>
       <QuoteModal isOpen={isQuoteModalOpen} onClose={() => setIsQuoteModalOpen(false)} />
       
-      {/* Hero Section */}
-      <section className="relative bg-bg-light overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-dark/5 to-transparent"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
+      {/* Hero Section with Full-Bleed Background Image */}
+      <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center overflow-hidden border-b border-gray-200">
+        {/* Full Section Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/hero1.webp" 
+            alt="Ambalaje carton și cutii pizza Euromag" 
+            className="w-full h-full object-cover object-center lg:object-[68%_center]"
+          />
+          {/* Subtle warm/brand depth blend */}
+          <div className="absolute inset-0 bg-[#0c1813]/25 mix-blend-multiply pointer-events-none"></div>
+          {/* Main directional gradient ensuring text is crisp and readable */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-950/95 via-gray-950/80 to-gray-950/20 sm:to-transparent pointer-events-none"></div>
+          {/* Extra bottom vignette for mobile */}
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-transparent to-black/30 lg:hidden pointer-events-none"></div>
+        </div>
+
+        {/* Hero Content Over Image */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 lg:py-24 relative z-10 w-full">
           <div className="max-w-2xl">
-            <span className="inline-block py-1 px-3 rounded-full bg-brand-light/10 text-brand-dark text-sm font-semibold mb-6 border border-brand-light/20">
-              Soluții B2B & E-commerce
-            </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brand-slate leading-tight mb-6">
-              Ambalaje de calitate <br className="hidden md:block" /> pentru afacerea ta
+            
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-semibold mb-6 shadow-sm w-fit">
+              <span className="w-2.5 h-2.5 rounded-full bg-brand-light animate-pulse"></span>
+              Producție &amp; Distribuție Ambalaje B2B &amp; HoReCa
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.12] tracking-tight mb-6 drop-shadow-md">
+              Ambalaje rezistente <br className="hidden sm:block" />
+              <span className="text-brand-light">pentru succesul</span> afacerii tale
             </h1>
-            <p className="text-lg text-gray-600 mb-8 max-w-xl">
-              Producem și distribuim cutii din carton ondulat, soluții pentru HoReCa și e-commerce. Livrare rapidă din stoc sau producție personalizată.
+
+            <p className="text-base sm:text-lg text-gray-200 mb-8 max-w-xl leading-relaxed drop-shadow">
+              Cutii pizza concepute pentru prospețime, cutii din carton ondulat CO3 &amp; CO5 pentru transport sigur și sacoșe trainice. Prețuri directe de producător și stoc permanent.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <button 
                 onClick={() => {
                   const catalogSection = document.getElementById('catalog-categorii');
                   catalogSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="bg-brand-dark hover:bg-brand-dark/90 text-white font-medium py-3.5 px-8 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                className="bg-brand-light hover:bg-[#52ad49] text-gray-950 font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 text-base cursor-pointer"
               >
-                Vezi Catalogul
-                <ChevronRight className="w-5 h-5" />
+                Vezi Catalogul de Produse
+                <ChevronRight className="w-5 h-5 text-gray-950" />
               </button>
               <button 
                 onClick={() => setIsQuoteModalOpen(true)}
-                className="bg-white hover:bg-gray-50 text-brand-slate border border-gray-200 font-medium py-3.5 px-8 rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/30 backdrop-blur-md font-semibold py-3.5 px-8 rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 text-base cursor-pointer"
               >
                 Cere Ofertă Personalizată
               </button>
             </div>
-          </div>
-        </div>
-        
-        {/* Decorative graphic right side */}
-        <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full">
-          <div className="relative w-full h-full flex items-center justify-center">
-            <div className="absolute w-96 h-96 bg-brand-light/10 rounded-full blur-3xl"></div>
-            <img 
-              src="https://i.imgur.com/DMNMtWe.png" 
-              alt="Cutii carton Euromag" 
-              className="relative z-10 rounded-2xl shadow-2xl object-cover w-4/5 aspect-square border-4 border-white transform rotate-3 hover:rotate-0 transition-transform duration-500"
-              referrerPolicy="no-referrer"
-            />
+
+            {/* Value props micro-pills */}
+            <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-white/20 max-w-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-brand-light shrink-0" />
+                <span className="text-xs sm:text-sm font-medium text-gray-200">Stoc permanent</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-brand-light shrink-0" />
+                <span className="text-xs sm:text-sm font-medium text-gray-200">Preț producător</span>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -79,7 +100,7 @@ export function HomePage({ onNavigateToCategory }: HomePageProps) {
                 <Truck className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-gray-900">Livrare Rapidă</h3>
-              <p className="text-sm text-gray-500 mt-1">24-48h oriunde în România</p>
+              <p className="text-sm text-gray-500 mt-1">Oriunde în România</p>
             </div>
             <div className="flex flex-col items-center justify-center p-4">
               <div className="w-12 h-12 bg-brand-light/10 rounded-full flex items-center justify-center mb-3 text-brand-dark">
