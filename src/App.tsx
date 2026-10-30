@@ -222,22 +222,6 @@ export default function App() {
               />
             </div>
 
-            {/* Search Bar (Desktop) */}
-            <div className="hidden md:flex flex-1 max-w-2xl mx-8">
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  className="w-full bg-bg-light border border-gray-200 rounded-lg py-2.5 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent transition-all"
-                  placeholder="Caută cutii pizza, cutii transport, accesorii..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button className="absolute right-0 top-0 h-full px-4 text-gray-400 hover:text-brand-dark transition-colors">
-                  <Search className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
             {/* Actions */}
             <div className="flex items-center gap-6">
               <button 
@@ -266,20 +250,6 @@ export default function App() {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
                 {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
-          </div>
-          
-          {/* Search Bar (Mobile) */}
-          <div className="md:hidden pb-4">
-            <div className="relative w-full">
-              <input
-                type="text"
-                className="w-full bg-bg-light border border-gray-200 rounded-lg py-2.5 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-brand-light focus:border-transparent"
-                placeholder="Caută produse..."
-              />
-              <button className="absolute right-0 top-0 h-full px-4 text-gray-400">
-                <Search className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -411,7 +381,7 @@ export default function App() {
       {/* Footer */}
       <footer className="bg-gray-50 border-t border-gray-200 pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             <div>
               <div 
                 className="flex items-center mb-6 h-16 cursor-pointer"
@@ -459,21 +429,6 @@ export default function App() {
                 <li><button onClick={() => handleNavigateToInfo('shipping')} className="hover:text-brand-dark transition-colors">Livrare și Plată</button></li>
                 <li><button onClick={() => handleNavigateToInfo('returns')} className="hover:text-brand-dark transition-colors">Politica de Retur</button></li>
               </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4">Newsletter</h4>
-              <p className="text-sm text-gray-500 mb-4">Abonează-te pentru a primi oferte speciale și noutăți.</p>
-              <form className="flex flex-col gap-2" onSubmit={(e) => e.preventDefault()}>
-                <input 
-                  type="email" 
-                  placeholder="Adresa ta de email" 
-                  className="bg-white border border-gray-200 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-brand-light text-sm"
-                />
-                <button className="bg-brand-dark text-white font-medium py-2 rounded-lg hover:bg-brand-dark/90 transition-colors text-sm">
-                  Abonează-mă
-                </button>
-              </form>
             </div>
           </div>
           
