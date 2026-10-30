@@ -1,8 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ShoppingCart, Check, Package, ShieldCheck, Truck } from 'lucide-react';
+import { ShoppingCart, Check, Package, ShieldCheck, Truck, Percent } from 'lucide-react';
 import { Product, CartItem } from '../types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+
+const VOLUME_DISCOUNT_TIERS = [
+  { minQuantity: 100, discount: 5, label: '100+ bucăți' },
+  { minQuantity: 300, discount: 10, label: '300+ bucăți' },
+  { minQuantity: 500, discount: 15, label: '500+ bucăți' },
+  { minQuantity: 1000, discount: 20, label: '1000+ bucăți' },
+  { minQuantity: 5000, discount: 25, label: '5000+ bucăți' },
+];
 
 interface ProductPageProps {
   product: Product;
@@ -69,7 +77,7 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
     return price;
   }, [product.basePrice, selectedOptions, productData]);
 
-  const currentPricePerPiece = useMemo(() => {
+  const basePricePerPiece = useMemo(() => {
     if (productData.discount && productData.discount > 0) {
       return originalPricePerPiece * (1 - productData.discount / 100);
     }
@@ -78,9 +86,31 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
 
   const parsedQuantity = typeof quantity === 'number' ? quantity : (parseInt(String(quantity), 10) || 0);
 
+  const volumeDiscount = useMemo(() => {
+    if (!isCustomQuantityCategory) return 0;
+    if (parsedQuantity >= 5000) return 25;
+    if (parsedQuantity >= 1000) return 20;
+    if (parsedQuantity >= 500) return 15;
+    if (parsedQuantity >= 300) return 10;
+    if (parsedQuantity >= 100) return 5;
+    return 0;
+  }, [isCustomQuantityCategory, parsedQuantity]);
+
+  const currentPricePerPiece = useMemo(() => {
+    if (volumeDiscount > 0) {
+      return basePricePerPiece * (1 - volumeDiscount / 100);
+    }
+    return basePricePerPiece;
+  }, [basePricePerPiece, volumeDiscount]);
+
   const totalPrice = useMemo(() => {
     return currentPricePerPiece * parsedQuantity;
   }, [currentPricePerPiece, parsedQuantity]);
+
+  const totalSavings = useMemo(() => {
+    if (volumeDiscount <= 0 || parsedQuantity <= 0) return 0;
+    return (basePricePerPiece * parsedQuantity) - totalPrice;
+  }, [basePricePerPiece, parsedQuantity, totalPrice, volumeDiscount]);
 
   return (
     <div className="bg-bg-light min-h-screen py-12">
@@ -135,12 +165,19 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
               <div className="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 font-medium mb-1">Preț estimativ per bucată</p>
-                  <div className="flex items-end gap-2">
+                  <div className="flex flex-wrap items-end gap-2">
                     <span className="text-3xl font-bold text-brand-dark">{currentPricePerPiece.toFixed(2)} RON</span>
-                    {productData.discount > 0 && (
-                      <span className="text-lg text-gray-400 line-through mb-1 ml-1">{originalPricePerPiece.toFixed(2)} RON</span>
+                    {(productData.discount > 0 || volumeDiscount > 0) && (
+                      <span className="text-lg text-gray-400 line-through mb-1 ml-1">
+                        {(productData.discount > 0 ? originalPricePerPiece : basePricePerPiece).toFixed(2)} RON
+                      </span>
                     )}
                     <span className="text-gray-400 mb-1 text-sm">(Tva inclus)</span>
+                    {volumeDiscount > 0 && (
+                      <span className="mb-1 ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                        -{volumeDiscount}% Discount Volum
+                      </span>
+                    )}
                   </div>
                 </div>
                 {!isCustomQuantityCategory && product.minimumOrder && (
@@ -256,9 +293,16 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
                   </button>
                 </div>
                 {parsedQuantity > 0 && (
-                  <p className="text-sm text-gray-600 mt-2 font-medium">
-                    Total estimat: <span className="font-bold text-brand-dark">{totalPrice.toFixed(2)} RON</span> <span className="text-gray-400 text-xs">(Tva inclus)</span>
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm text-gray-600 font-medium">
+                      Total estimat: <span className="font-bold text-brand-dark">{totalPrice.toFixed(2)} RON</span> <span className="text-gray-400 text-xs">(Tva inclus)</span>
+                    </p>
+                    {volumeDiscount > 0 && (
+                      <p className="text-xs font-semibold text-green-600">
+                        Discount volum aplicat: -{volumeDiscount}% (Economisiți {totalSavings.toFixed(2)} RON)
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -288,6 +332,71 @@ export function ProductPage({ product, onAddToCart }: ProductPageProps) {
                       : 'Adaugă în coș'
                 }
               </button>
+
+              {/* Volume Promotion Section (below Add to Cart button & above Delivery/Quality badges) */}
+              {isCustomQuantityCategory && (
+                <div className="mt-6 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                  <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-brand-dark text-white flex items-center justify-center">
+                        <Percent className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                        Promoție Volum (Discount Automat)
+                      </h4>
+                    </div>
+                    {volumeDiscount > 0 && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-600 text-white">
+                        Activ: -{volumeDiscount}%
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="divide-y divide-gray-100">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-3 px-4 py-2.5 bg-gray-50/60 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <span>Cantitate</span>
+                      <span className="text-center">Discount</span>
+                      <span className="text-right">Preț / bucată</span>
+                    </div>
+
+                    {/* Table Rows */}
+                    {VOLUME_DISCOUNT_TIERS.map((tier) => {
+                      const isCurrentTier = volumeDiscount === tier.discount;
+                      const tierUnitPrice = basePricePerPiece * (1 - tier.discount / 100);
+                      return (
+                        <button
+                          key={tier.minQuantity}
+                          type="button"
+                          onClick={() => setQuantity(tier.minQuantity)}
+                          className={`w-full grid grid-cols-3 items-center px-4 py-3 text-left transition-all ${
+                            isCurrentTier
+                              ? 'bg-brand-light/15 border-l-4 border-l-brand-dark'
+                              : 'bg-white hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            {isCurrentTier && <Check className="w-4 h-4 text-brand-dark flex-shrink-0" />}
+                            {tier.label}
+                          </span>
+                          <span className="text-center">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-extrabold ${
+                              isCurrentTier
+                                ? 'bg-brand-dark text-white'
+                                : 'bg-brand-light/15 text-brand-dark'
+                            }`}>
+                              -{tier.discount}% discount
+                            </span>
+                          </span>
+                          <span className="text-right text-base font-bold text-brand-dark">
+                            {tierUnitPrice.toFixed(2)} RON <span className="text-xs font-normal text-gray-500">/ buc</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-100">
                 <div className="flex items-center gap-3">
