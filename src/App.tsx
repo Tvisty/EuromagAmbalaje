@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, User, Menu, ChevronLeft, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingCart, User, Menu, ChevronLeft, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { HomePage } from './pages/HomePage';
 import { ProductPage } from './pages/ProductPage';
 import { CategoryPage } from './pages/CategoryPage';
@@ -78,6 +78,21 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
+  const [activeDropdownCategory, setActiveDropdownCategory] = useState<string | null>(null);
+  const [mobileExpandedCategory, setMobileExpandedCategory] = useState<string | null>(null);
+  const productsDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (productsDropdownRef.current && !productsDropdownRef.current.contains(event.target as Node)) {
+        setIsProductsDropdownOpen(false);
+        setActiveDropdownCategory(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
@@ -207,36 +222,274 @@ export default function App() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo */}
-            <div 
-              className="flex-shrink-0 flex items-center cursor-pointer h-full"
-              onClick={handleNavigateToHome}
-            >
-              <img 
-                src="https://i.imgur.com/AjSYx9L.png" 
-                alt="Euromag Ambalaje Logo" 
-                className="h-16 md:h-20 w-auto object-contain scale-[1.7] md:scale-[1.8] origin-left"
-                referrerPolicy="no-referrer"
-              />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-2 sm:py-2.5 relative">
+            {/* Left Side: Logo + Produse Dropdown side by side */}
+            <div className="flex items-center gap-2.5 sm:gap-6 md:gap-8 min-w-0">
+              {/* Logo */}
+              <div 
+                className="flex-shrink-0 flex items-center cursor-pointer"
+                onClick={handleNavigateToHome}
+              >
+                <img 
+                  src="/logo (1).webp" 
+                  alt="Euromag Ambalaje Logo" 
+                  className="h-12 sm:h-20 md:h-24 w-auto object-contain"
+                />
+              </div>
+
+              {/* Produse Dropdown Trigger & Menu beside Logo */}
+              <div 
+                ref={productsDropdownRef}
+                className="static md:relative flex-shrink-0"
+                onMouseEnter={() => {
+                  if (window.innerWidth >= 768) {
+                    setIsProductsDropdownOpen(true);
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (window.innerWidth >= 768) {
+                    setIsProductsDropdownOpen(false);
+                    setActiveDropdownCategory(null);
+                  }
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProductsDropdownOpen((prev) => {
+                      const next = !prev;
+                      if (!next) setActiveDropdownCategory(null);
+                      return next;
+                    });
+                  }}
+                  className="inline-flex items-center gap-1.5 sm:gap-2.5 bg-brand-dark hover:bg-brand-dark/95 text-white font-semibold text-xs sm:text-sm px-3 py-2 sm:px-4 sm:py-2 rounded-lg md:rounded-t-lg md:rounded-b-md shadow-xs transition-all cursor-pointer"
+                >
+                  <Menu className="w-4 h-4 text-brand-light flex-shrink-0" />
+                  <span>Produse</span>
+                  <ChevronDown className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 flex-shrink-0 ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Panel (full width on mobile, anchored under button on desktop) */}
+                {isProductsDropdownOpen && (
+                  <div className="absolute left-0 right-0 md:right-auto top-full pt-1 md:pt-0.5 z-50 flex flex-col md:flex-row items-stretch md:items-start">
+                    {/* Categories List */}
+                    <div className="w-full md:w-72 max-h-[75vh] md:max-h-none overflow-y-auto md:overflow-visible bg-[#f4f5f7] border border-gray-200/90 shadow-xl rounded-xl md:rounded-t-none md:rounded-b-xl">
+                      {categories.map((category) => {
+                        const isActive = activeDropdownCategory === category.id;
+                        const subProducts = products.filter((p) => p.categoryId === category.id);
+
+                        return (
+                          <div
+                            key={category.id}
+                            className="border-b border-gray-200/90 last:border-b-0"
+                            onMouseEnter={() => {
+                              if (window.innerWidth >= 768) {
+                                setActiveDropdownCategory(category.id);
+                              }
+                            }}
+                          >
+                            <div
+                              className={`flex items-center justify-between px-4 py-3.5 transition-colors cursor-pointer ${
+                                isActive ? 'bg-white text-brand-dark' : 'hover:bg-white/80 text-gray-900'
+                              }`}
+                            >
+                              {/* Clicking the category icon/title goes directly to the category page */}
+                              <div
+                                className="flex items-center gap-3.5 flex-1 min-w-0"
+                                onClick={() => {
+                                  handleNavigateToCategory(category.id);
+                                  setIsProductsDropdownOpen(false);
+                                  setActiveDropdownCategory(null);
+                                }}
+                              >
+                                {/* Illustrated Category Icon */}
+                                <div className="w-9 h-9 flex-shrink-0 flex items-center justify-center">
+                                  {category.id === 'pizza' && (
+                                    <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
+                                      {/* Pizza Box Base */}
+                                      <polygon points="4,22 20,14 36,22 20,30" fill="#e5b887" />
+                                      <polygon points="4,22 20,30 20,34 4,26" fill="#c58b59" />
+                                      <polygon points="36,22 20,30 20,34 36,26" fill="#a36a3c" />
+                                      {/* Open Top Lid */}
+                                      <polygon points="4,22 20,14 32,7 16,15" fill="#f3d6b3" stroke="#c58b59" strokeWidth="0.8" />
+                                      {/* Pizza Graphic on Box */}
+                                      <circle cx="20" cy="22" r="5" fill="#d94e34" />
+                                      <circle cx="19" cy="21" r="1" fill="#f9d46c" />
+                                      <circle cx="22" cy="22.5" r="1" fill="#f9d46c" />
+                                      <circle cx="19.5" cy="23.5" r="0.9" fill="#f9d46c" />
+                                    </svg>
+                                  )}
+                                  {category.id === 'carton' && (
+                                    <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
+                                      {/* 3D Isometric Cardboard Box */}
+                                      <polygon points="20,6 35,13.5 20,21 5,13.5" fill="#dfb183" />
+                                      <polygon points="5,13.5 20,21 20,35 5,27.5" fill="#c58b59" />
+                                      <polygon points="35,13.5 20,21 20,35 35,27.5" fill="#9c6436" />
+                                      {/* Top Flap Seam & Tape */}
+                                      <line x1="12.5" y1="9.75" x2="27.5" y2="17.25" stroke="#6b4226" strokeWidth="2.2" />
+                                    </svg>
+                                  )}
+                                  {category.id === 'pungi' && (
+                                    <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
+                                      {/* Pouch / Bag Body */}
+                                      <rect x="8" y="8" width="24" height="26" rx="3" fill="#e8edf3" stroke="#cbd5e1" strokeWidth="1" />
+                                      <rect x="11" y="13" width="18" height="17" rx="1.5" fill="#ffffff" />
+                                      {/* Top Seal Line */}
+                                      <line x1="9" y1="10" x2="31" y2="10" stroke="#f5b841" strokeWidth="2" strokeLinecap="round" />
+                                      {/* Label AccentLines */}
+                                      <line x1="16" y1="20" x2="24" y2="20" stroke="#f5b841" strokeWidth="1.8" strokeLinecap="round" />
+                                      <line x1="16" y1="23.5" x2="22" y2="23.5" stroke="#cbd5e1" strokeWidth="1.8" strokeLinecap="round" />
+                                    </svg>
+                                  )}
+                                </div>
+
+                                <span className="text-[15px] font-medium tracking-tight truncate">
+                                  {category.title}
+                                </span>
+                              </div>
+
+                              {/* Clicking the arrow toggles subcategories on touch/click */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDropdownCategory(isActive ? null : category.id);
+                                }}
+                                className="p-2 -mr-1 rounded-md hover:bg-gray-200/60 text-gray-800 transition-colors"
+                                title="Vezi subcategoriile"
+                              >
+                                <ChevronRight
+                                  className={`w-4 h-4 transition-transform duration-200 ${
+                                    isActive ? 'rotate-90 md:rotate-0 text-brand-dark' : ''
+                                  }`}
+                                />
+                              </button>
+                            </div>
+
+                            {/* Mobile Inline Subcategories (when opened on mobile screens) */}
+                            {isActive && (
+                              <div className="md:hidden bg-white border-t border-gray-100 py-1.5 px-3 space-y-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleNavigateToCategory(category.id);
+                                    setIsProductsDropdownOpen(false);
+                                    setActiveDropdownCategory(null);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-xs font-bold uppercase tracking-wider text-brand-dark hover:bg-gray-50 rounded-md flex items-center justify-between"
+                                >
+                                  <span>Vezi toate ({category.title})</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                                {subProducts.map((prod) => (
+                                  <button
+                                    key={prod.id}
+                                    type="button"
+                                    onClick={() => {
+                                      handleNavigateToProduct(prod.id);
+                                      setIsProductsDropdownOpen(false);
+                                      setActiveDropdownCategory(null);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 text-left transition-colors"
+                                  >
+                                    <img
+                                      src={prod.image}
+                                      alt={prod.title}
+                                      className="w-9 h-9 rounded object-cover border border-gray-200 bg-white flex-shrink-0"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-medium text-gray-800 truncate">{prod.title}</p>
+                                      <p className="text-xs text-brand-dark font-semibold">{prod.basePrice.toFixed(2)} RON / buc</p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Desktop Subcategories Flyout Panel (opens to the right when hovering/clicking a category) */}
+                    {activeDropdownCategory && (() => {
+                      const activeCat = categories.find((c) => c.id === activeDropdownCategory);
+                      const subProducts = products.filter((p) => p.categoryId === activeDropdownCategory);
+                      if (!activeCat) return null;
+
+                      return (
+                        <div className="hidden md:block w-80 bg-white border border-gray-200 shadow-xl rounded-r-xl rounded-bl-xl ml-1 p-4 animate-in fade-in duration-150">
+                          <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                            <div>
+                              <h4 className="font-bold text-gray-900 text-sm">{activeCat.title}</h4>
+                              <p className="text-xs text-gray-500">{subProducts.length} modele disponibile</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleNavigateToCategory(activeCat.id);
+                                setIsProductsDropdownOpen(false);
+                                setActiveDropdownCategory(null);
+                              }}
+                              className="text-xs font-semibold text-brand-dark hover:underline flex items-center gap-0.5 cursor-pointer"
+                            >
+                              Vezi toate
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {subProducts.map((prod) => (
+                              <button
+                                key={prod.id}
+                                type="button"
+                                onClick={() => {
+                                  handleNavigateToProduct(prod.id);
+                                  setIsProductsDropdownOpen(false);
+                                  setActiveDropdownCategory(null);
+                                }}
+                                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#f4f5f7] text-left transition-colors group cursor-pointer"
+                              >
+                                <img
+                                  src={prod.image}
+                                  alt={prod.title}
+                                  className="w-11 h-11 rounded-md object-cover border border-gray-200 bg-white flex-shrink-0 group-hover:border-brand-light transition-colors"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-semibold text-gray-900 group-hover:text-brand-dark transition-colors leading-snug">
+                                    {prod.title}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    De la <span className="font-semibold text-brand-dark">{prod.basePrice.toFixed(2)} RON</span> / buc
+                                  </p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-brand-dark flex-shrink-0" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3.5 sm:gap-6 flex-shrink-0">
               <button 
-                className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors"
+                className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors cursor-pointer"
                 onClick={handleNavigateToAccount}
               >
-                <User className="w-6 h-6 mb-1" />
+                <User className="w-6 h-6 sm:mb-1" />
                 <span className="text-xs font-medium hidden sm:inline">Contul meu</span>
               </button>
               <button 
-                className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors relative"
+                className="flex flex-col items-center text-gray-500 hover:text-brand-dark transition-colors relative cursor-pointer"
                 onClick={() => setIsCartOpen(true)}
               >
                 <div className="relative">
-                  <ShoppingCart className="w-6 h-6 mb-1" />
+                  <ShoppingCart className="w-6 h-6 sm:mb-1" />
                   {cartItems.length > 0 && (
                     <span className="absolute -top-1 -right-2 bg-brand-light text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                       {cartItems.length}
@@ -245,53 +498,8 @@ export default function App() {
                 </div>
                 <span className="text-xs font-medium hidden sm:inline">Coșul tău</span>
               </button>
-              <button 
-                className="md:hidden text-gray-500"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
             </div>
           </div>
-          
-          {/* Mobile Menu Dropdown */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-lg animate-in slide-in-from-top-2">
-              <div className="px-4 pt-2 pb-6 space-y-1">
-                <button
-                  onClick={() => { handleNavigateToHome(); setIsMobileMenuOpen(false); }}
-                  className="block w-full text-left px-3 py-3 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                >
-                  Acasă
-                </button>
-                
-                <div className="pt-4 pb-2">
-                  <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Categorii Produse
-                  </p>
-                </div>
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => { handleNavigateToCategory(category.id); setIsMobileMenuOpen(false); }}
-                    className="block w-full text-left px-3 py-3 pl-6 text-base font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-brand-dark"
-                  >
-                    {category.title}
-                  </button>
-                ))}
-                
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => { handleNavigateToAccount(); setIsMobileMenuOpen(false); }}
-                    className="flex items-center w-full text-left px-3 py-3 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                  >
-                    <User className="w-5 h-5 mr-3 text-gray-400" />
-                    Contul meu
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </header>
 
@@ -384,14 +592,13 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             <div>
               <div 
-                className="flex items-center mb-6 h-16 cursor-pointer"
+                className="flex items-center mb-6 cursor-pointer"
                 onClick={handleNavigateToHome}
               >
                 <img 
-                  src="https://i.imgur.com/AjSYx9L.png" 
+                  src="/logo (1).webp" 
                   alt="Euromag Ambalaje Logo" 
-                  className="h-12 md:h-16 w-auto object-contain scale-[1.7] md:scale-[1.8] origin-left"
-                  referrerPolicy="no-referrer"
+                  className="h-20 md:h-24 w-auto object-contain"
                 />
               </div>
               <p className="text-gray-500 text-sm mb-6">
